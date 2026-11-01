@@ -12,7 +12,8 @@ import {
   ArrowRight, 
   Sparkles,
   Smartphone,
-  Flame
+  Flame,
+  ChefHat
 } from 'lucide-react';
 
 export default function WelcomePage() {
@@ -65,7 +66,7 @@ export default function WelcomePage() {
 
         <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          Block 3 Live
+          Food Republic C1 Live
         </span>
       </div>
 
@@ -144,18 +145,20 @@ export default function WelcomePage() {
       {/* Action Buttons */}
       <div className="space-y-3 z-10 pt-2 pb-4">
         <Link
-          href="/register"
+          href="/home"
           className="w-full bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 active:scale-98 text-white font-extrabold py-3.5 px-6 rounded-2xl shadow-elevated flex items-center justify-center gap-2 text-base transition-all"
         >
-          <span>Get Started</span>
+          <UtensilsCrossed className="w-5 h-5" />
+          <span>Enter Canteen & Order Food</span>
           <ArrowRight className="w-5 h-5" />
         </Link>
 
         <Link
-          href="/login"
-          className="w-full bg-white/10 hover:bg-white/15 active:scale-98 text-white font-bold py-3.5 px-6 rounded-2xl border border-white/15 flex items-center justify-center text-sm transition-all"
+          href="/register"
+          className="w-full bg-white/10 hover:bg-white/15 active:scale-98 text-white font-bold py-3.5 px-6 rounded-2xl border border-white/15 flex items-center justify-center gap-2 text-sm transition-all"
         >
-          <span>Log In to Account</span>
+          <ChefHat className="w-4 h-4 text-amber-400" />
+          <span>Restaurant Owner Registration</span>
         </Link>
 
         {/* Quick Demo Access Bar */}

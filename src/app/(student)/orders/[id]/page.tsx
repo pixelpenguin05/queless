@@ -119,7 +119,7 @@ export default function SingleOrderPage() {
             Pickup Instructions
           </h2>
           <div className="text-xs text-slate-600 space-y-1.5">
-            <p>1. Head to <strong>Central Canteen (Block B-3)</strong>.</p>
+            <p>1. Head to <strong>Food Republic C1</strong>.</p>
             <p>2. Go to <strong>{order.canteenCounter}</strong> (Express Pre-Order Lane).</p>
             <p>3. Show Token <strong>#{order.orderNumber}</strong> on your phone screen.</p>
             <p>4. Complete payment via <strong>{order.paymentMethod}</strong> and enjoy your break!</p>

@@ -24,9 +24,10 @@ export const FoodCard: React.FC<Props> = ({ item, onOpenDetails }) => {
         className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-slate-100 flex-shrink-0 cursor-pointer"
       >
         <Image
-          src={item.image}
+          src={item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'}
           alt={item.name}
           fill
+          unoptimized
           sizes="(max-width: 640px) 112px, 128px"
           className={`object-cover transition-transform duration-300 group-hover:scale-105 ${
             !item.isAvailable ? 'grayscale opacity-60' : ''

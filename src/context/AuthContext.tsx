@@ -15,7 +15,16 @@ interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (name: string, email: string, password: string, rollNumber: string, phone: string) => Promise<{ success: boolean; error?: string }>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    rollNumber?: string,
+    phone?: string,
+    role?: UserRole,
+    restaurantName?: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  updateUserName: (newName: string) => Promise<void>;
   logout: () => Promise<void>;
   quickLoginAsStudent: () => void;
   quickLoginAsAdmin: () => void;
@@ -34,12 +43,12 @@ const DEMO_STUDENT: UserProfile = {
 
 const DEMO_ADMIN: UserProfile = {
   id: 'admin-canteen-01',
-  name: 'Canteen Kitchen Lead (Chef Vikram)',
+  name: 'Chef Vikram (Canteen Lead)',
   email: 'admin.canteen@cumail.in',
   role: 'admin',
   rollNumber: 'STAFF-902',
   phone: '+91 98111 22334',
-  campusBlock: 'Central Canteen Block 3',
+  campusBlock: 'Food Republic C1',
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -118,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: 'Password must be at least 6 characters long.' };
       }
 
-      const isAdmin = email.toLowerCase().includes('admin') || email.toLowerCase().includes('canteen');
+      const isAdmin = email.toLowerCase().includes('admin') || email.toLowerCase().includes('canteen') || email.toLowerCase().includes('owner');
       const profile: UserProfile = isAdmin 
         ? { ...DEMO_ADMIN, email } 
         : {
@@ -145,28 +154,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string,
     email: string,
     password: string,
-    rollNumber: string,
-    phone: string
+    rollNumber?: string,
+    phone?: string,
+    selectedRole?: UserRole,
+    restaurantName?: string
   ): Promise<{ success: boolean; error?: string }> => {
     setLoading(true);
     try {
       if (!name.trim()) return { success: false, error: 'Name is required' };
       if (!email.includes('@')) return { success: false, error: 'Valid email is required' };
       if (password.length < 6) return { success: false, error: 'Password must be at least 6 characters' };
-      if (!rollNumber.trim()) return { success: false, error: 'CU Roll Number is required' };
 
-      const role: UserRole = email.toLowerCase().includes('admin') ? 'admin' : 'student';
+      const role: UserRole = selectedRole || (email.toLowerCase().includes('admin') || email.toLowerCase().includes('owner') ? 'admin' : 'student');
+      const finalRoll = rollNumber?.trim() || (role === 'admin' ? 'OWNER-' + Math.floor(100 + Math.random() * 900) : '21BCS' + Math.floor(1000 + Math.random() * 9000));
+      const finalBlock = role === 'admin' ? (restaurantName?.trim() || 'Food Republic C1') : 'Academic Block B-3';
 
       if (isFirebaseConfigured) {
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
         const profile: UserProfile = {
           id: userCred.user.uid,
-          name,
-          email,
+          name: name.trim(),
+          email: email.trim(),
           role,
-          rollNumber,
-          phone,
-          campusBlock: 'North Campus',
+          rollNumber: finalRoll,
+          phone: phone?.trim() || '+91 98111 22334',
+          campusBlock: finalBlock,
         };
         await setDoc(doc(db, 'users', userCred.user.uid), profile);
         setUser(profile);
@@ -174,15 +186,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
       }
 
-      // Local mock registration
+      // Local persistent registration
       const newProfile: UserProfile = {
-        id: 'user-' + Date.now(),
-        name,
-        email,
+        id: (role === 'admin' ? 'owner-' : 'user-') + Date.now(),
+        name: name.trim(),
+        email: email.trim(),
         role,
-        rollNumber,
-        phone: phone || '+91 98765 43210',
-        campusBlock: 'Academic Block B-3',
+        rollNumber: finalRoll,
+        phone: phone?.trim() || '+91 98111 22334',
+        campusBlock: finalBlock,
       };
 
       setUser(newProfile);
@@ -192,6 +204,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       setLoading(false);
       return { success: false, error: err.message || 'Registration failed.' };
+    }
+  };
+
+  const updateUserName = async (newName: string) => {
+    if (!user || !newName.trim()) return;
+    const updated: UserProfile = { ...user, name: newName.trim() };
+    setUser(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('queueless_cu_user', JSON.stringify(updated));
+    }
+    if (isFirebaseConfigured && auth.currentUser) {
+      try {
+        await setDoc(doc(db, 'users', auth.currentUser.uid), updated, { merge: true });
+      } catch (e) {
+        console.error('Error updating user in Firestore:', e);
+      }
     }
   };
 
@@ -224,6 +252,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         login,
         register,
+        updateUserName,
         logout,
         quickLoginAsStudent,
         quickLoginAsAdmin,

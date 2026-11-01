@@ -116,12 +116,36 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       }
     }
+
+    const handleCustomOrderUpdate = (e: Event) => {
+      const customEv = e as CustomEvent<Order[]>;
+      if (customEv.detail) {
+        setOrders(customEv.detail);
+      }
+    };
+
+    const handleStorageOrderUpdate = (e: StorageEvent) => {
+      if (e.key === 'queueless_cu_orders' && e.newValue) {
+        try {
+          setOrders(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+
+    window.addEventListener('queueless_orders_updated', handleCustomOrderUpdate);
+    window.addEventListener('storage', handleStorageOrderUpdate);
+
+    return () => {
+      window.removeEventListener('queueless_orders_updated', handleCustomOrderUpdate);
+      window.removeEventListener('storage', handleStorageOrderUpdate);
+    };
   }, []);
 
   const saveOrders = (updated: Order[]) => {
     setOrders(updated);
     if (typeof window !== 'undefined') {
       localStorage.setItem('queueless_cu_orders', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('queueless_orders_updated', { detail: updated }));
     }
   };
 

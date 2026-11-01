@@ -91,7 +91,7 @@ export default function ProfilePage() {
           </h2>
           <div className="flex items-start gap-2.5 text-xs text-slate-600">
             <MapPin className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
-            <span>Central Canteen, Ground Floor, Academic Block B-3, Chandigarh University</span>
+            <span>Food Republic C1, Ground Floor, Chandigarh University</span>
           </div>
           <div className="flex items-center gap-2.5 text-xs text-slate-600">
             <Clock className="w-4 h-4 text-brand-500 flex-shrink-0" />
@@ -107,8 +107,8 @@ export default function ProfilePage() {
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-xs font-bold">Canteen Kitchen Staff Portal</h3>
-                <p className="text-[10px] text-slate-400">Order fulfillment & menu admin</p>
+                <h3 className="text-xs font-bold">Restaurant Owner Portal</h3>
+                <p className="text-[10px] text-slate-400">Register dishes, set prices & manage stock</p>
               </div>
             </div>
 
@@ -119,7 +119,7 @@ export default function ProfilePage() {
               }}
               className="bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition"
             >
-              Open Kitchen
+              Open Panel
             </button>
           </div>
         </div>

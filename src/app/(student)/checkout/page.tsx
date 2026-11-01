@@ -73,7 +73,7 @@ export default function CheckoutPage() {
         paymentMethod,
         paymentStatus: 'Pending',
         estimatedReadyTime: pickupSlot.includes('Immediate') ? '15 mins' : pickupSlot,
-        canteenCounter: 'Counter 2 (Block 3)',
+        canteenCounter: 'Counter 2 (Food Republic C1)',
       });
 
       clearCart();
@@ -130,10 +130,10 @@ export default function CheckoutPage() {
             </div>
             <div>
               <div className="text-sm font-bold text-slate-900">
-                Chandigarh University Central Canteen
+                Chandigarh University Food Republic C1
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Academic Block B-3, Ground Floor • <strong>Counter 2 (Pre-Order Express)</strong>
+                Food Republic C1, Ground Floor • <strong>Counter 2 (Pre-Order Express)</strong>
               </p>
             </div>
           </div>

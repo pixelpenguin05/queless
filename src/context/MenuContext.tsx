@@ -19,6 +19,7 @@ interface MenuContextType {
   // Admin actions
   toggleAvailability: (id: string) => Promise<void>;
   updateItemPrice: (id: string, newPrice: number) => Promise<void>;
+  updateItem: (id: string, updatedFields: Partial<MenuItem>) => Promise<void>;
   addNewItem: (item: Omit<MenuItem, 'id'>) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
   resetToSampleData: () => void;
@@ -61,12 +62,36 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     }
+
+    const handleCustomUpdate = (e: Event) => {
+      const customEv = e as CustomEvent<MenuItem[]>;
+      if (customEv.detail) {
+        setItems(customEv.detail);
+      }
+    };
+
+    const handleStorageUpdate = (e: StorageEvent) => {
+      if (e.key === 'queueless_cu_menu' && e.newValue) {
+        try {
+          setItems(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+
+    window.addEventListener('queueless_menu_updated', handleCustomUpdate);
+    window.addEventListener('storage', handleStorageUpdate);
+
+    return () => {
+      window.removeEventListener('queueless_menu_updated', handleCustomUpdate);
+      window.removeEventListener('storage', handleStorageUpdate);
+    };
   }, []);
 
   const saveItems = (updated: MenuItem[]) => {
     setItems(updated);
     if (typeof window !== 'undefined') {
       localStorage.setItem('queueless_cu_menu', JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent('queueless_menu_updated', { detail: updated }));
     }
   };
 
@@ -100,6 +125,21 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await updateDoc(doc(db, 'menuItems', id), { price: newPrice });
       } catch (err) {
         console.error('Firestore price update error:', err);
+      }
+    }
+  };
+
+  const updateItem = async (id: string, updatedFields: Partial<MenuItem>) => {
+    const updated = items.map((item) => 
+      item.id === id ? { ...item, ...updatedFields } : item
+    );
+    saveItems(updated);
+
+    if (isFirebaseConfigured) {
+      try {
+        await updateDoc(doc(db, 'menuItems', id), updatedFields);
+      } catch (err) {
+        console.error('Firestore update error:', err);
       }
     }
   };
@@ -158,6 +198,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
         filteredItems,
         toggleAvailability,
         updateItemPrice,
+        updateItem,
         addNewItem,
         deleteItem,
         resetToSampleData,

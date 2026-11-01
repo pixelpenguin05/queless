@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useMenu } from '@/context/MenuContext';
 import { useOrders } from '@/context/OrderContext';
+import { useCart } from '@/context/CartContext';
 import { FoodCard } from '@/components/FoodCard';
 import { FoodDetailModal } from '@/components/FoodDetailModal';
 import { MenuItem, FoodCategory } from '@/lib/types';
@@ -18,7 +19,12 @@ import {
   ArrowRight, 
   BellRing, 
   TrendingUp, 
-  ShieldCheck 
+  ChefHat,
+  Leaf,
+  ShoppingBag,
+  Store,
+  ChevronRight,
+  Plus
 } from 'lucide-react';
 
 export default function StudentHomePage() {
@@ -26,10 +32,29 @@ export default function StudentHomePage() {
   const { user } = useAuth();
   const { items, setSelectedCategory } = useMenu();
   const { activeOrders } = useOrders();
+  const { itemCount, subtotal } = useCart();
+  
   const [selectedFoodItem, setSelectedFoodItem] = useState<MenuItem | null>(null);
   const [localSearch, setLocalSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState<FoodCategory>('all');
+  const [vegOnly, setVegOnly] = useState<boolean>(false);
 
-  const popularItems = items.filter((item) => item.popular);
+  // Trending / Popular dishes (registered popular items or first 4 available)
+  const popularItems = items.filter((item) => item.popular && item.isAvailable);
+  const displayTrending = popularItems.length > 0 
+    ? popularItems.slice(0, 4) 
+    : items.filter((i) => i.isAvailable).slice(0, 4);
+
+  // Live Canteen Menu filtered for student browsing
+  const filteredDishes = items.filter((item) => {
+    const matchesCat = activeCategory === 'all' || item.category === activeCategory;
+    const matchesVeg = !vegOnly || item.isVeg;
+    const matchesSearch = !localSearch.trim() || 
+      item.name.toLowerCase().includes(localSearch.toLowerCase()) ||
+      item.description.toLowerCase().includes(localSearch.toLowerCase());
+    return matchesCat && matchesVeg && matchesSearch;
+  });
+
   const currentActiveOrder = activeOrders[0];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -42,12 +67,11 @@ export default function StudentHomePage() {
   };
 
   const handleCategorySelect = (catId: string) => {
-    setSelectedCategory(catId as FoodCategory);
-    router.push('/menu');
+    setActiveCategory(catId as FoodCategory);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-8">
+    <div className="min-h-screen bg-slate-50 pb-28">
       {/* Student Greeting Banner */}
       <div className="bg-gradient-to-b from-brand-500 via-brand-600 to-amber-600 text-white px-5 pt-4 pb-14 rounded-b-4xl shadow-md">
         <div className="flex items-center justify-between">
@@ -58,14 +82,23 @@ export default function StudentHomePage() {
             <h1 className="text-xl font-black tracking-tight mt-0.5">
               Ready for Campus Break?
             </h1>
-            <p className="text-[11px] text-brand-100/90 mt-0.5">
-              Roll No: {user?.rollNumber || '21BCS4821'} • Block B-3 Canteen
+            <p className="text-[11px] text-brand-100/90 mt-0.5 flex items-center gap-1.5">
+              <span>Roll No: {user?.rollNumber || '21BCS4821'}</span>
+              <span>•</span>
+              <span className="font-bold bg-white/20 px-1.5 py-0.5 rounded text-[10px]">
+                Food Republic C1
+              </span>
             </p>
           </div>
 
-          <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white text-xl shadow-inner">
-            🥘
-          </div>
+          <Link
+            href="/admin"
+            className="w-12 h-12 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-inner transition active:scale-95"
+            title="Open Restaurant Owner Panel"
+          >
+            <ChefHat className="w-5 h-5" />
+            <span className="text-[8px] font-black uppercase tracking-wider mt-0.5">Owner</span>
+          </Link>
         </div>
 
         {/* Search Bar Input */}
@@ -75,7 +108,7 @@ export default function StudentHomePage() {
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Search Samosa, Paneer Thali, Cold Coffee..."
+            placeholder="Search Samosa, Thali, Dosa, Cold Coffee..."
             className="w-full bg-white text-slate-900 placeholder-slate-400 text-xs font-medium pl-11 pr-24 py-3 rounded-2xl shadow-elevated focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
           <button
@@ -106,7 +139,7 @@ export default function StudentHomePage() {
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Pickup: {currentActiveOrder.pickupSlot} • Counter 1
+                    Pickup: {currentActiveOrder.pickupSlot} • Counter 2
                   </p>
                 </div>
               </div>
@@ -122,22 +155,25 @@ export default function StudentHomePage() {
           </div>
         )}
 
-        {/* Campus Canteen Promo Card */}
-        <div className="bg-gradient-to-r from-amber-500 via-brand-500 to-orange-600 rounded-3xl p-4 text-white shadow-soft relative overflow-hidden">
-          <div className="relative z-10">
-            <span className="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> Lunch Rush Hack
-            </span>
-            <h2 className="text-base font-extrabold mt-1.5 leading-snug">
-              Order before 1:00 PM
-            </h2>
-            <p className="text-xs text-amber-100 mt-0.5">
-              Food will be bagged and hot at Counter 2 when the bell rings.
-            </p>
+        {/* Restaurant Owner Quick Action Banner */}
+        <div className="bg-slate-900 rounded-3xl p-4 text-white shadow-soft flex items-center justify-between border border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-brand-500 flex items-center justify-center text-white flex-shrink-0">
+              <Store className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-white">Owner Restaurant Portal</h3>
+              <p className="text-[10px] text-slate-400">Register new dishes & manage live stock</p>
+            </div>
           </div>
-          <div className="absolute -right-4 -bottom-6 text-6xl opacity-30 select-none">
-            🥪
-          </div>
+
+          <Link
+            href="/admin"
+            className="bg-brand-500 hover:bg-brand-600 active:scale-95 text-white text-xs font-black px-3.5 py-2 rounded-xl flex items-center gap-1 shadow-sm transition"
+          >
+            <span>Manage</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
         {/* Categories Horizontal Carousel */}
@@ -147,7 +183,7 @@ export default function StudentHomePage() {
               <span>Categories</span>
             </h2>
             <Link href="/menu" className="text-xs font-bold text-brand-600 hover:underline">
-              See All Menu
+              Full Menu ({items.length})
             </Link>
           </div>
 
@@ -156,10 +192,16 @@ export default function StudentHomePage() {
               <button
                 key={cat.id}
                 onClick={() => handleCategorySelect(cat.id)}
-                className="flex flex-col items-center flex-shrink-0 bg-white border border-slate-200/70 hover:border-brand-300 rounded-2xl p-2.5 w-20 shadow-xs hover:shadow-soft active:scale-95 transition"
+                className={`flex flex-col items-center flex-shrink-0 border rounded-2xl p-2.5 w-20 transition active:scale-95 ${
+                  activeCategory === cat.id
+                    ? 'bg-brand-500 border-brand-600 text-white shadow-soft'
+                    : 'bg-white border-slate-200/70 hover:border-brand-300 text-slate-800 shadow-xs'
+                }`}
               >
                 <span className="text-2xl mb-1">{cat.icon}</span>
-                <span className="text-[11px] font-bold text-slate-800 text-center truncate w-full">
+                <span className={`text-[11px] font-bold text-center truncate w-full ${
+                  activeCategory === cat.id ? 'text-white' : 'text-slate-800'
+                }`}>
                   {cat.label.split(' ')[0]}
                 </span>
               </button>
@@ -167,28 +209,91 @@ export default function StudentHomePage() {
           </div>
         </div>
 
-        {/* Popular Campus Picks */}
+        {/* SECTION: LIVE CANTEEN MENU (All dishes registered by the owner) */}
         <div>
           <div className="flex items-center justify-between mb-3 px-1">
-            <div className="flex items-center gap-1.5">
-              <Flame className="w-4 h-4 text-brand-600 fill-brand-500" />
-              <h2 className="text-sm font-extrabold text-slate-900">
-                Trending on CU Campus
-              </h2>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <h2 className="text-sm font-extrabold text-slate-900">
+                  Food Republic C1 Menu
+                </h2>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                {filteredDishes.length} items live & ready to order
+              </p>
             </div>
-            <span className="text-xs text-slate-400 font-medium">Most ordered today</span>
+
+            {/* Pure Veg Toggle */}
+            <button
+              onClick={() => setVegOnly(!vegOnly)}
+              className={`flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border transition ${
+                vegOnly
+                  ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
+                  : 'bg-white border-slate-200 text-slate-600'
+              }`}
+            >
+              <Leaf className={`w-3 h-3 ${vegOnly ? 'text-emerald-600 fill-emerald-600' : 'text-slate-400'}`} />
+              <span>Veg Only</span>
+            </button>
           </div>
 
+          {/* Dishes List */}
           <div className="space-y-3">
-            {popularItems.slice(0, 4).map((item) => (
-              <FoodCard
-                key={item.id}
-                item={item}
-                onOpenDetails={(it) => setSelectedFoodItem(it)}
-              />
-            ))}
+            {filteredDishes.length === 0 ? (
+              <div className="bg-white rounded-3xl p-8 text-center border border-slate-200/80 shadow-xs">
+                <div className="text-4xl mb-2">🍽️</div>
+                <h3 className="font-bold text-slate-800 text-sm">No dishes found</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Try changing category or clearing the search.
+                </p>
+                <button
+                  onClick={() => {
+                    setActiveCategory('all');
+                    setVegOnly(false);
+                    setLocalSearch('');
+                  }}
+                  className="mt-3 text-xs font-bold text-brand-600 hover:underline"
+                >
+                  Show all dishes
+                </button>
+              </div>
+            ) : (
+              filteredDishes.map((item) => (
+                <FoodCard
+                  key={item.id}
+                  item={item}
+                  onOpenDetails={(it) => setSelectedFoodItem(it)}
+                />
+              ))
+            )}
           </div>
         </div>
+
+        {/* Popular Campus Picks */}
+        {displayTrending.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex items-center gap-1.5">
+                <Flame className="w-4 h-4 text-brand-600 fill-brand-500" />
+                <h2 className="text-sm font-extrabold text-slate-900">
+                  Trending on CU Campus
+                </h2>
+              </div>
+              <span className="text-xs text-slate-400 font-medium">Chef&apos;s recommendations</span>
+            </div>
+
+            <div className="space-y-3">
+              {displayTrending.map((item) => (
+                <FoodCard
+                  key={item.id}
+                  item={item}
+                  onOpenDetails={(it) => setSelectedFoodItem(it)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Quick Features Footer Banner */}
         <div className="bg-white rounded-3xl p-4 border border-slate-200/70 shadow-xs flex items-center justify-around text-center">
@@ -200,7 +305,7 @@ export default function StudentHomePage() {
           <div className="h-8 w-px bg-slate-200" />
           <div>
             <div className="text-base">📍</div>
-            <p className="text-[11px] font-bold text-slate-800 mt-1">Block B-3</p>
+            <p className="text-[11px] font-bold text-slate-800 mt-1">Food Republic C1</p>
             <p className="text-[10px] text-slate-400">Direct pickup</p>
           </div>
           <div className="h-8 w-px bg-slate-200" />
@@ -211,6 +316,31 @@ export default function StudentHomePage() {
           </div>
         </div>
       </div>
+
+      {/* Floating Bottom Cart Bar when user has items in cart */}
+      {itemCount > 0 && (
+        <div className="fixed bottom-20 left-0 right-0 z-40 px-4 max-w-md mx-auto pointer-events-none">
+          <div className="pointer-events-auto bg-gradient-to-r from-brand-600 to-amber-600 text-white rounded-2xl p-3.5 shadow-float flex items-center justify-between border border-white/20 animate-in slide-in-from-bottom-4 duration-200">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-black text-xs">
+                {itemCount}
+              </div>
+              <div>
+                <p className="text-xs font-black">{itemCount} {itemCount === 1 ? 'item' : 'items'} in Tray</p>
+                <p className="text-[10px] text-amber-100">Total: ₹{subtotal} • Express Counter 2</p>
+              </div>
+            </div>
+
+            <Link
+              href="/cart"
+              className="bg-white text-brand-600 font-extrabold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1 shadow-sm active:scale-95 transition"
+            >
+              <span>View Tray</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Item Details Customization Modal */}
       <FoodDetailModal
