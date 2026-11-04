@@ -474,7 +474,11 @@ export default function AdminKitchenPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredOrders.length === 0 ? (
                 <div className="col-span-full bg-white rounded-3xl p-12 text-center border border-[#EAE5DC] shadow-soft">
-                  <p className="text-sm font-sans text-[#5F6B6F]">No orders found under this status.</p>
+                  <div className="text-4xl mb-2">📋</div>
+                  <h3 className="font-heading font-bold text-lg text-[#1A3D4F]">No Orders Placed Yet</h3>
+                  <p className="text-xs font-sans text-[#5F6B6F] mt-1 max-w-sm mx-auto">
+                    When students order from their phone, orders will appear here in real time with customer name, phone number, token, and sound alert.
+                  </p>
                 </div>
               ) : (
                 filteredOrders.map((order) => (
@@ -668,80 +672,96 @@ export default function AdminKitchenPage() {
             </div>
 
             {/* Dishes Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {managedItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white border border-[#EAE5DC] rounded-3xl p-4 space-y-4 shadow-soft hover:shadow-elevated transition-all flex flex-col justify-between"
+            {managedItems.length === 0 ? (
+              <div className="bg-white rounded-3xl p-12 text-center border border-[#EAE5DC] shadow-soft">
+                <div className="text-4xl mb-2">🍳</div>
+                <h3 className="font-heading font-bold text-lg text-[#1A3D4F]">No Food Items Added Yet</h3>
+                <p className="text-xs font-sans text-[#5F6B6F] mt-1 max-w-sm mx-auto">
+                  Your canteen menu is currently empty. Click &quot;Add Food Dish&quot; above to list your dishes and prices.
+                </p>
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="mt-4 bg-[#E23744] hover:bg-[#CB202D] text-white text-xs font-bold font-sans py-2.5 px-4 rounded-xl shadow-xs transition"
                 >
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-20 h-20 rounded-2xl bg-[#F5EFE6] overflow-hidden relative flex-shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img 
-                        src={item.image || PRESET_DISH_IMAGES[0].url} 
-                        alt={item.name} 
-                        className={`w-full h-full object-cover ${!item.isAvailable ? 'grayscale opacity-50' : ''}`} 
-                      />
+                  + Add Food Dish
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {managedItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="bg-white border border-[#EAE5DC] rounded-3xl p-4 space-y-4 shadow-soft hover:shadow-elevated transition-all flex flex-col justify-between"
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-20 h-20 rounded-2xl bg-[#F5EFE6] overflow-hidden relative flex-shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={item.image || PRESET_DISH_IMAGES[0].url} 
+                          alt={item.name} 
+                          className={`w-full h-full object-cover ${!item.isAvailable ? 'grayscale opacity-50' : ''}`} 
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="font-heading font-bold text-base text-[#1A3D4F] truncate">{item.name}</h3>
+                          {item.popular && (
+                            <span className="bg-[#FBF1D4] text-[#8A6A0B] text-[10px] font-black px-1.5 py-0.2 rounded font-sans">
+                              Popular
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs font-sans text-[#5F6B6F] line-clamp-2 mt-1">{item.description}</p>
+                        
+                        <div className="flex items-center gap-2 mt-2 text-xs font-sans">
+                          <span className="font-extrabold text-[#1A3D4F]">₹{item.price}</span>
+                          <span className="text-[#8A7F70]">•</span>
+                          <span className="text-[#5F6B6F] capitalize">{item.category}</span>
+                          <span className="text-[#8A7F70]">•</span>
+                          <span className="text-[#5F6B6F]">{item.preparationTimeMin}m prep</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <h3 className="font-heading font-bold text-base text-[#1A3D4F] truncate">{item.name}</h3>
-                        {item.popular && (
-                          <span className="bg-[#FBF1D4] text-[#8A6A0B] text-[10px] font-black px-1.5 py-0.2 rounded font-sans">
-                            Popular
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs font-sans text-[#5F6B6F] line-clamp-2 mt-1">{item.description}</p>
-                      
-                      <div className="flex items-center gap-2 mt-2 text-xs font-sans">
-                        <span className="font-extrabold text-[#1A3D4F]">₹{item.price}</span>
-                        <span className="text-[#8A7F70]">•</span>
-                        <span className="text-[#5F6B6F] capitalize">{item.category}</span>
-                        <span className="text-[#8A7F70]">•</span>
-                        <span className="text-[#5F6B6F]">{item.preparationTimeMin}m prep</span>
-                      </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-[#EAE5DC] gap-2 font-sans">
+                      <button
+                        onClick={async () => {
+                          await toggleAvailability(item.id);
+                          showToast(`Updated "${item.name}" availability`);
+                        }}
+                        className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                          item.isAvailable
+                            ? 'bg-[#E7F5EE] text-[#0F5B4C] border border-[#0F5B4C]/20'
+                            : 'bg-[#FFF5F5] text-[#CC191D] border border-[#CC191D]/20'
+                        }`}
+                      >
+                        {item.isAvailable ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                        <span>{item.isAvailable ? 'In Stock (Live)' : 'Sold Out'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => openEditModal(item)}
+                        className="p-2 bg-[#FAF7F2] hover:bg-[#EAE5DC] text-[#1A3D4F] border border-[#EAE5DC] rounded-xl transition"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Delete "${item.name}"?`)) {
+                            await deleteItem(item.id);
+                            showToast(`Deleted "${item.name}"`);
+                          }
+                        }}
+                        className="p-2 bg-[#FAF7F2] hover:bg-[#FFF5F5] text-[#8A7F70] hover:text-[#CC191D] border border-[#EAE5DC] rounded-xl transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-[#EAE5DC] gap-2 font-sans">
-                    <button
-                      onClick={async () => {
-                        await toggleAvailability(item.id);
-                        showToast(`Updated "${item.name}" availability`);
-                      }}
-                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
-                        item.isAvailable
-                          ? 'bg-[#E7F5EE] text-[#0F5B4C] border border-[#0F5B4C]/20'
-                          : 'bg-[#FFF5F5] text-[#CC191D] border border-[#CC191D]/20'
-                      }`}
-                    >
-                      {item.isAvailable ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      <span>{item.isAvailable ? 'In Stock (Live)' : 'Sold Out'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => openEditModal(item)}
-                      className="p-2 bg-[#FAF7F2] hover:bg-[#EAE5DC] text-[#1A3D4F] border border-[#EAE5DC] rounded-xl transition"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      onClick={async () => {
-                        if (confirm(`Delete "${item.name}"?`)) {
-                          await deleteItem(item.id);
-                          showToast(`Deleted "${item.name}"`);
-                        }
-                      }}
-                      className="p-2 bg-[#FAF7F2] hover:bg-[#FFF5F5] text-[#8A7F70] hover:text-[#CC191D] border border-[#EAE5DC] rounded-xl transition"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -769,60 +789,76 @@ export default function AdminKitchenPage() {
               </div>
 
               <div className="space-y-4 pt-2">
-                {restaurants.map((rest) => (
-                  <div
-                    key={rest.id}
-                    className="p-5 rounded-3xl border border-[#EAE5DC] bg-[#FAF7F2] flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-[#F5EFE6] text-[#1A3D4F] flex items-center justify-center font-bold flex-shrink-0">
-                        <Store className="w-7 h-7 text-[#E23744]" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-heading font-bold text-lg text-[#1A3D4F]">{rest.name}</h3>
-                          <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
-                            rest.status === 'approved'
-                              ? 'bg-[#E7F5EE] text-[#0F5B4C] border border-[#0F5B4C]/20'
-                              : rest.status === 'pending'
-                              ? 'bg-[#FBF1D4] text-[#8A6A0B] border border-[#E8B92C]/40 animate-pulse'
-                              : 'bg-[#FFF5F5] text-[#CC191D]'
-                          }`}>
-                            {rest.status === 'approved' ? '✓ Verified & Active' : rest.status === 'pending' ? '⏳ Pending Approval' : '✕ Rejected'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#5F6B6F] mt-1">
-                          Owner: <strong>{rest.ownerName}</strong> • Phone: <strong>{rest.ownerPhone}</strong>
-                        </p>
-                        <p className="text-xs text-[#8A7F70] mt-0.5">
-                          Location: {rest.counterLocation}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Admin Action Buttons (Requirement 3) */}
-                    <div className="flex items-center gap-2 self-start md:self-auto">
-                      {rest.status !== 'approved' && (
-                        <button
-                          onClick={() => handleUpdateRestaurantStatus(rest.id, 'approved')}
-                          className="bg-[#0F5B4C] hover:bg-[#0B4438] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm transition flex items-center gap-1.5"
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Approve & Verify</span>
-                        </button>
-                      )}
-
-                      {rest.status !== 'rejected' && (
-                        <button
-                          onClick={() => handleUpdateRestaurantStatus(rest.id, 'rejected')}
-                          className="bg-white hover:bg-[#FFF5F5] text-[#CC191D] border border-[#EAE5DC] text-xs font-bold py-2.5 px-3 rounded-xl transition"
-                        >
-                          Reject
-                        </button>
-                      )}
-                    </div>
+                {restaurants.length === 0 ? (
+                  <div className="p-10 rounded-3xl border border-[#EAE5DC] bg-[#FAF7F2] text-center font-sans">
+                    <div className="text-4xl mb-2">🏪</div>
+                    <h3 className="font-heading font-bold text-lg text-[#1A3D4F]">No Canteens Registered Yet</h3>
+                    <p className="text-xs text-[#5F6B6F] mt-1 max-w-sm mx-auto">
+                      Click &quot;Register Canteen&quot; to add your canteen outlet. You will then be able to add food items and receive student orders.
+                    </p>
+                    <button
+                      onClick={() => setIsRegisterRestModalOpen(true)}
+                      className="mt-4 bg-[#1A3D4F] hover:bg-[#2E5A66] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs transition"
+                    >
+                      + Register First Canteen
+                    </button>
                   </div>
-                ))}
+                ) : (
+                  restaurants.map((rest) => (
+                    <div
+                      key={rest.id}
+                      className="p-5 rounded-3xl border border-[#EAE5DC] bg-[#FAF7F2] flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-[#F5EFE6] text-[#1A3D4F] flex items-center justify-center font-bold flex-shrink-0">
+                          <Store className="w-7 h-7 text-[#E23744]" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-heading font-bold text-lg text-[#1A3D4F]">{rest.name}</h3>
+                            <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                              rest.status === 'approved'
+                                ? 'bg-[#E7F5EE] text-[#0F5B4C] border border-[#0F5B4C]/20'
+                                : rest.status === 'pending'
+                                ? 'bg-[#FBF1D4] text-[#8A6A0B] border border-[#E8B92C]/40 animate-pulse'
+                                : 'bg-[#FFF5F5] text-[#CC191D]'
+                            }`}>
+                              {rest.status === 'approved' ? '✓ Verified & Active' : rest.status === 'pending' ? '⏳ Pending Approval' : '✕ Rejected'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#5F6B6F] mt-1">
+                            Owner: <strong>{rest.ownerName}</strong> • Phone: <strong>{rest.ownerPhone}</strong>
+                          </p>
+                          <p className="text-xs text-[#8A7F70] mt-0.5">
+                            Location: {rest.counterLocation}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Admin Action Buttons (Requirement 3) */}
+                      <div className="flex items-center gap-2 self-start md:self-auto">
+                        {rest.status !== 'approved' && (
+                          <button
+                            onClick={() => handleUpdateRestaurantStatus(rest.id, 'approved')}
+                            className="bg-[#0F5B4C] hover:bg-[#0B4438] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm transition flex items-center gap-1.5"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Approve & Verify</span>
+                          </button>
+                        )}
+
+                        {rest.status !== 'rejected' && (
+                          <button
+                            onClick={() => handleUpdateRestaurantStatus(rest.id, 'rejected')}
+                            className="bg-white hover:bg-[#FFF5F5] text-[#CC191D] border border-[#EAE5DC] text-xs font-bold py-2.5 px-3 rounded-xl transition"
+                          >
+                            Reject
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

@@ -225,35 +225,54 @@ export default function StudentHomePage() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1">
-            <button
-              onClick={() => setSelectedRestaurantId('all')}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-bold font-sans whitespace-nowrap transition border ${
-                selectedRestaurantId === 'all'
-                  ? 'bg-[#1A3D4F] text-white border-[#1A3D4F] shadow-sm'
-                  : 'bg-white text-[#5F6B6F] border-[#EAE5DC] hover:border-[#1A3D4F]'
-              }`}
-            >
-              🍽️ All Outlets
-            </button>
-
-            {restaurants.map((rest) => (
+          {restaurants.length === 0 ? (
+            <div className="bg-white rounded-3xl p-6 border border-[#EAE5DC] text-center shadow-soft">
+              <div className="w-12 h-12 rounded-2xl bg-[#FFE4E6] text-[#E23744] flex items-center justify-center mx-auto mb-3">
+                <Store className="w-6 h-6" />
+              </div>
+              <h3 className="font-heading font-bold text-base text-[#1A3D4F]">No Canteens Registered Yet</h3>
+              <p className="text-xs font-sans text-[#5F6B6F] mt-1 max-w-sm mx-auto">
+                Are you a canteen or restaurant owner on campus? Register your food outlet to start accepting pre-orders.
+              </p>
+              <Link
+                href="/register"
+                className="mt-3 inline-flex items-center gap-1.5 bg-[#E23744] hover:bg-[#CB202D] text-white text-xs font-bold font-sans px-4 py-2 rounded-xl shadow-xs transition"
+              >
+                <Store className="w-4 h-4" />
+                <span>Register Your Canteen</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1">
               <button
-                key={rest.id}
-                onClick={() => setSelectedRestaurantId(rest.id)}
-                className={`px-4 py-2.5 rounded-2xl text-xs font-bold font-sans whitespace-nowrap transition border flex items-center gap-2 ${
-                  selectedRestaurantId === rest.id
-                    ? 'bg-[#E23744] text-white border-[#E23744] shadow-sm'
-                    : 'bg-white text-[#1A3D4F] border-[#EAE5DC] hover:border-[#E23744]'
+                onClick={() => setSelectedRestaurantId('all')}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-bold font-sans whitespace-nowrap transition border ${
+                  selectedRestaurantId === 'all'
+                    ? 'bg-[#1A3D4F] text-white border-[#1A3D4F] shadow-sm'
+                    : 'bg-white text-[#5F6B6F] border-[#EAE5DC] hover:border-[#1A3D4F]'
                 }`}
               >
-                <span>📍 {rest.name}</span>
-                <span className="text-[10px] bg-black/10 px-1.5 py-0.5 rounded-md font-mono">
-                  {rest.counterLocation.split('•')[0].trim()}
-                </span>
+                🍽️ All Outlets
               </button>
-            ))}
-          </div>
+
+              {restaurants.map((rest) => (
+                <button
+                  key={rest.id}
+                  onClick={() => setSelectedRestaurantId(rest.id)}
+                  className={`px-4 py-2.5 rounded-2xl text-xs font-bold font-sans whitespace-nowrap transition border flex items-center gap-2 ${
+                    selectedRestaurantId === rest.id
+                      ? 'bg-[#E23744] text-white border-[#E23744] shadow-sm'
+                      : 'bg-white text-[#1A3D4F] border-[#EAE5DC] hover:border-[#E23744]'
+                  }`}
+                >
+                  <span>📍 {rest.name}</span>
+                  <span className="text-[10px] bg-black/10 px-1.5 py-0.5 rounded-md font-mono">
+                    {rest.counterLocation.split('•')[0].trim()}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Categories Section */}
@@ -342,21 +361,42 @@ export default function StudentHomePage() {
           {filteredDishes.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center border border-[#EAE5DC] shadow-soft">
               <div className="text-5xl mb-3">🍽️</div>
-              <h3 className="font-heading font-bold text-[#1A3D4F] text-xl">No dishes found</h3>
+              <h3 className="font-heading font-bold text-[#1A3D4F] text-xl">
+                {items.length === 0 ? 'No Food Dishes Added Yet' : 'No dishes match this filter'}
+              </h3>
               <p className="text-xs font-sans text-[#5F6B6F] mt-1 max-w-sm mx-auto">
-                No canteen dishes match your current filter. Try clearing the search or switching categories.
+                {items.length === 0 
+                  ? 'The canteen menu is empty right now. Canteen owners can register food items using the Kitchen Portal.' 
+                  : 'Try clearing your search or switching categories to see more items.'}
               </p>
-              <button
-                onClick={() => {
-                  setActiveCategory('all');
-                  setSelectedRestaurantId('all');
-                  setVegOnly(false);
-                  setLocalSearch('');
-                }}
-                className="mt-4 bg-[#E23744] text-white text-xs font-bold font-sans px-5 py-2.5 rounded-xl shadow-sm"
-              >
-                Show All Dishes
-              </button>
+              {items.length === 0 ? (
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <Link
+                    href="/register"
+                    className="bg-[#E23744] hover:bg-[#CB202D] text-white text-xs font-bold font-sans px-5 py-2.5 rounded-xl shadow-sm transition"
+                  >
+                    Register Canteen
+                  </Link>
+                  <Link
+                    href="/admin"
+                    className="bg-[#1A3D4F] hover:bg-[#2E5A66] text-white text-xs font-bold font-sans px-5 py-2.5 rounded-xl shadow-sm transition"
+                  >
+                    Open Kitchen Admin
+                  </Link>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setActiveCategory('all');
+                    setSelectedRestaurantId('all');
+                    setVegOnly(false);
+                    setLocalSearch('');
+                  }}
+                  className="mt-4 bg-[#E23744] text-white text-xs font-bold font-sans px-5 py-2.5 rounded-xl shadow-sm"
+                >
+                  Show All Dishes
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5">

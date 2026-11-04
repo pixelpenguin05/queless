@@ -41,7 +41,7 @@ export default function OrdersPage() {
               Your Campus Orders
             </h1>
             <p className="text-xs font-sans text-[#5F6B6F]">
-              Live updates and past receipts from Food Republic C1
+              Live token updates and past receipts from campus canteens
             </p>
           </div>
 

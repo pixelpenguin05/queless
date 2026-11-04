@@ -103,7 +103,7 @@ export default function CheckoutPage() {
         paymentMethod,
         paymentStatus: 'Pending',
         estimatedReadyTime: pickupSlot.includes('Immediate') ? '15 mins' : pickupSlot,
-        canteenCounter: 'Food Republic C1 • Counter 2',
+        canteenCounter: items[0]?.menuItem.restaurantName ? items[0].menuItem.restaurantName + ' Counter' : 'Campus Canteen Counter',
       });
 
       clearCart();

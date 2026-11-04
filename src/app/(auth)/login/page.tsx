@@ -123,42 +123,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Quick Demo Login Preset Buttons */}
-        <div className="mt-8 pt-6 border-t border-[#EAE5DC]">
-          <div className="flex items-center gap-1.5 text-xs font-sans font-bold text-[#8A7F70] mb-3">
-            <Sparkles className="w-4 h-4 text-[#DBA81F]" />
-            <span>Fast One-Click Evaluator Demo:</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                quickLoginAsStudent();
-                router.push('/home');
-              }}
-              className="bg-[#FAF7F2] hover:bg-[#FFE4E6]/50 border border-[#EAE5DC] hover:border-[#E23744]/40 p-3 rounded-2xl transition text-left flex flex-col font-sans"
-            >
-              <span className="text-[#E23744] font-bold text-xs">🎓 Student Demo</span>
-              <span className="text-[10px] text-[#8A7F70] font-normal">Aman (9876543210)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                quickLoginAsAdmin();
-                router.push('/admin');
-              }}
-              className="bg-[#FAF7F2] hover:bg-[#FBF1D4]/60 border border-[#EAE5DC] hover:border-[#DBA81F]/50 p-3 rounded-2xl transition text-left flex flex-col font-sans"
-            >
-              <span className="text-[#1A3D4F] font-bold text-xs">👨‍🍳 Kitchen / Admin</span>
-              <span className="text-[10px] text-[#8A7F70] font-normal">Food Republic C1</span>
-            </button>
-          </div>
-        </div>
-
         {/* Switch to Register */}
-        <div className="text-center pt-6 text-xs font-sans text-[#5F6B6F]">
+        <div className="mt-8 pt-6 border-t border-[#EAE5DC] text-center text-xs font-sans text-[#5F6B6F]">
           Are you a canteen or restaurant owner?{' '}
           <Link href="/register" className="font-bold text-[#E23744] hover:underline">
             Register Canteen Here

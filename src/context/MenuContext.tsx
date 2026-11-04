@@ -38,7 +38,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await fetch('/api/menu');
       if (res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+        if (data.success && Array.isArray(data.items)) {
           setItems(data.items);
           if (typeof window !== 'undefined') {
             localStorage.setItem('queueless_cu_menu', JSON.stringify(data.items));

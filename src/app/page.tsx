@@ -15,20 +15,18 @@ import {
   Flame,
   ChefHat,
   MapPin,
-  Star,
-  CheckCircle2,
-  TrendingUp
+  Store,
+  UserCheck
 } from 'lucide-react';
-import Image from 'next/image';
 
 export default function WelcomePage() {
-  const { user, loading, quickLoginAsStudent, quickLoginAsAdmin } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   // If user is already authenticated, redirect to appropriate home
   useEffect(() => {
     if (!loading && user) {
-      if (user.role === 'admin') {
+      if (user.role === 'admin' || user.role === 'restaurant_owner') {
         router.push('/admin');
       } else {
         router.push('/home');
@@ -43,7 +41,7 @@ export default function WelcomePage() {
           <UtensilsCrossed className="w-8 h-8 text-[#E23744]" />
         </div>
         <p className="mt-4 font-heading font-bold text-lg text-[#1A3D4F]">Loading QueueLess CU...</p>
-        <p className="text-xs font-sans text-[#8A7F70] mt-1">Connecting to Chandigarh University Canteen</p>
+        <p className="text-xs font-sans text-[#8A7F70] mt-1">Connecting to Chandigarh University Campus Network</p>
       </div>
     );
   }
@@ -67,7 +65,7 @@ export default function WelcomePage() {
             {/* Campus Pill */}
             <div className="inline-flex items-center gap-2 bg-[#E7F5EE] border border-[#0F5B4C]/20 px-3.5 py-1.5 rounded-full text-xs font-sans font-bold text-[#0F5B4C] shadow-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span>Chandigarh University • Food Republic C1 Live</span>
+              <span>Chandigarh University • Campus Food Hub</span>
             </div>
 
             {/* Main Editorial Heading */}
@@ -80,7 +78,7 @@ export default function WelcomePage() {
               </h1>
               
               <p className="font-sans text-[#5F6B6F] text-base sm:text-lg max-w-xl leading-relaxed pt-1">
-                Order your favourite canteen meals right from class. Walk in during lunch break, show your token at <strong>Counter 2</strong>, and pick up fresh hot food instantly.
+                Pre-order fresh meals from your phone. Pick up instantly with your express token at the counter and pay via Cash on Delivery.
               </p>
             </div>
 
@@ -91,7 +89,7 @@ export default function WelcomePage() {
                 className="bg-[#E23744] hover:bg-[#CB202D] active:scale-98 text-white font-sans font-extrabold py-4 px-7 rounded-2xl shadow-elevated flex items-center justify-center gap-3 text-base transition-all group"
               >
                 <UtensilsCrossed className="w-5 h-5 stroke-[2.5]" />
-                <span>Enter Canteen & Order Food</span>
+                <span>Enter Canteen & View Menu</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
 
@@ -99,65 +97,39 @@ export default function WelcomePage() {
                 href="/register"
                 className="bg-white hover:bg-[#F5EFE6] text-[#1A3D4F] border border-[#EAE5DC] font-sans font-bold py-4 px-6 rounded-2xl shadow-soft flex items-center justify-center gap-2.5 text-sm transition-all"
               >
-                <ChefHat className="w-4 h-4 text-[#E23744]" />
-                <span>Restaurant Owner Portal</span>
+                <Store className="w-4 h-4 text-[#E23744]" />
+                <span>Register Canteen Outlet</span>
               </Link>
             </div>
 
-            {/* Quick Demo Access Bar */}
-            <div className="pt-4 border-t border-[#EAE5DC] max-w-lg">
-              <div className="flex items-center gap-1.5 text-xs font-sans font-bold text-[#8A7F70] mb-2.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#DBA81F]" />
-                <span>One-Click Evaluator Demo (No login credentials needed):</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    quickLoginAsStudent();
-                    router.push('/home');
-                  }}
-                  className="bg-white hover:bg-[#FFE4E6]/50 border border-[#EAE5DC] hover:border-[#E23744]/40 p-3 rounded-2xl text-left transition shadow-xs group"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🎓</span>
-                    <div>
-                      <div className="text-xs font-bold font-sans text-[#1A3D4F] group-hover:text-[#E23744]">
-                        Student View
-                      </div>
-                      <div className="text-[10px] font-sans text-[#8A7F70]">
-                        Aman Sharma (21BCS4821)
-                      </div>
-                    </div>
-                  </div>
-                </button>
+            {/* Quick Portal Switcher */}
+            <div className="pt-4 border-t border-[#EAE5DC] max-w-lg flex items-center gap-3">
+              <Link
+                href="/login"
+                className="flex-1 bg-white hover:bg-[#FAF7F2] border border-[#EAE5DC] p-3 rounded-2xl transition shadow-xs flex items-center gap-3 text-left font-sans"
+              >
+                <span className="text-xl">🎓</span>
+                <div>
+                  <div className="text-xs font-bold text-[#1A3D4F]">Student Sign In</div>
+                  <div className="text-[10px] text-[#8A7F70]">Name & Phone only</div>
+                </div>
+              </Link>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    quickLoginAsAdmin();
-                    router.push('/admin');
-                  }}
-                  className="bg-white hover:bg-[#FBF1D4]/60 border border-[#EAE5DC] hover:border-[#DBA81F]/50 p-3 rounded-2xl text-left transition shadow-xs group"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">👨‍🍳</span>
-                    <div>
-                      <div className="text-xs font-bold font-sans text-[#1A3D4F] group-hover:text-[#DBA81F]">
-                        Kitchen & Owner Panel
-                      </div>
-                      <div className="text-[10px] font-sans text-[#8A7F70]">
-                        Food Republic C1 Staff
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              </div>
+              <Link
+                href="/admin"
+                className="flex-1 bg-white hover:bg-[#FAF7F2] border border-[#EAE5DC] p-3 rounded-2xl transition shadow-xs flex items-center gap-3 text-left font-sans"
+              >
+                <span className="text-xl">👨‍🍳</span>
+                <div>
+                  <div className="text-xs font-bold text-[#1A3D4F]">Kitchen & Admin Portal</div>
+                  <div className="text-[10px] text-[#8A7F70]">Orders & Menu Setup</div>
+                </div>
+              </Link>
             </div>
 
           </div>
 
-          {/* Right Column: Hero Visual Card (Food & Live Highlights) */}
+          {/* Right Column: Hero Visual Card */}
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto w-full max-w-md aspect-[4/5] rounded-4xl p-2 bg-gradient-to-b from-white via-white to-[#F5EFE6] border border-[#EAE5DC] shadow-2xl overflow-hidden flex flex-col justify-between">
               
@@ -174,14 +146,14 @@ export default function WelcomePage() {
               <div className="relative z-10 p-3 sm:p-4 flex justify-between items-center">
                 <span className="bg-white/95 backdrop-blur-md border border-[#EAE5DC] text-[#1A3D4F] text-xs font-bold font-sans px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md">
                   <Flame className="w-4 h-4 text-[#E23744] fill-[#E23744]" />
-                  <span>Fresh Canteen Meals</span>
+                  <span>Fresh Campus Meals</span>
                 </span>
                 <span className="bg-[#E8B92C] text-[#1A3D4F] text-xs font-black font-sans px-3 py-1.5 rounded-full shadow-md">
-                  ₹0 Pre-order Fee
+                  Cash on Delivery
                 </span>
               </div>
 
-              {/* Floating Bottom Card: Real-time pickup preview */}
+              {/* Floating Bottom Card */}
               <div className="relative z-10 p-4">
                 <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 border border-white/60 shadow-xl space-y-2">
                   <div className="flex items-center justify-between">
@@ -191,21 +163,21 @@ export default function WelcomePage() {
                       </div>
                       <div>
                         <div className="text-xs font-extrabold text-[#1A3D4F] font-sans">
-                          Counter 2 Express Pickup
+                          Express Counter Pickup
                         </div>
                         <div className="text-[10px] text-[#5F6B6F]">
                           Ready in 10-15 minutes
                         </div>
                       </div>
                     </div>
-                    <span className="text-xs font-black text-[#E23744] bg-[#FFF5F5] px-2 py-0.5 rounded-lg border border-[#E23744]/20">
-                      TOKEN #QL-4821
+                    <span className="text-xs font-black text-[#0F5B4C] bg-[#E7F5EE] px-2.5 py-0.5 rounded-lg border border-[#0F5B4C]/20">
+                      LIVE SYSTEM
                     </span>
                   </div>
                   
                   <div className="pt-2 border-t border-[#EAE5DC] flex items-center justify-between text-[11px] text-[#5F6B6F]">
-                    <span>Paneer Butter Masala Thali + Butter Naan</span>
-                    <span className="font-bold text-[#1A3D4F]">₹180</span>
+                    <span>Pre-order & collect with unique Token #</span>
+                    <span className="font-bold text-[#E23744]">Ready</span>
                   </div>
                 </div>
               </div>
@@ -221,8 +193,8 @@ export default function WelcomePage() {
             <div className="w-12 h-12 rounded-2xl bg-[#FBF1D4] text-[#DBA81F] flex items-center justify-center mx-auto mb-3">
               <Clock className="w-6 h-6 stroke-[2.2]" />
             </div>
-            <div className="font-heading font-bold text-[#1A3D4F] text-base">10m Express Prep</div>
-            <div className="text-xs font-sans text-[#5F6B6F] mt-1">Pre-ordered during lecture</div>
+            <div className="font-heading font-bold text-[#1A3D4F] text-base">Express Prep</div>
+            <div className="text-xs font-sans text-[#5F6B6F] mt-1">Pre-order during lecture</div>
           </div>
 
           <div className="bg-white border border-[#EAE5DC] rounded-3xl p-5 shadow-soft hover:shadow-elevated transition-all">
@@ -237,8 +209,8 @@ export default function WelcomePage() {
             <div className="w-12 h-12 rounded-2xl bg-[#E7F5EE] text-[#0F5B4C] flex items-center justify-center mx-auto mb-3">
               <MapPin className="w-6 h-6 stroke-[2.2]" />
             </div>
-            <div className="font-heading font-bold text-[#1A3D4F] text-base">Food Republic C1</div>
-            <div className="text-xs font-sans text-[#5F6B6F] mt-1">Ground floor express counter</div>
+            <div className="font-heading font-bold text-[#1A3D4F] text-base">Campus Counters</div>
+            <div className="text-xs font-sans text-[#5F6B6F] mt-1">Direct express counter pickup</div>
           </div>
 
           <div className="bg-white border border-[#EAE5DC] rounded-3xl p-5 shadow-soft hover:shadow-elevated transition-all">
@@ -246,7 +218,7 @@ export default function WelcomePage() {
               <ShieldCheck className="w-6 h-6 stroke-[2.2]" />
             </div>
             <div className="font-heading font-bold text-[#1A3D4F] text-base">Pay at Counter</div>
-            <div className="text-xs font-sans text-[#5F6B6F] mt-1">UPI QR or cash on pickup</div>
+            <div className="text-xs font-sans text-[#5F6B6F] mt-1">Cash on Delivery at collection</div>
           </div>
         </div>
 
@@ -258,6 +230,7 @@ export default function WelcomePage() {
           <p>© 2026 QueueLess CU • Chandigarh University Campus Food Ordering System</p>
           <div className="flex items-center gap-4">
             <Link href="/menu" className="hover:text-[#E23744] transition">Canteen Menu</Link>
+            <Link href="/register" className="hover:text-[#E23744] transition">Register Outlet</Link>
             <Link href="/admin" className="hover:text-[#E23744] transition">Kitchen Admin</Link>
             <Link href="/login" className="hover:text-[#E23744] transition">Student Sign In</Link>
           </div>

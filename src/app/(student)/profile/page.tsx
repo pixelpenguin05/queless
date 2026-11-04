@@ -39,10 +39,10 @@ export default function ProfilePage() {
               🎓 Chandigarh University Student
             </span>
             <h1 className="font-heading font-bold text-3xl sm:text-4xl text-white tracking-tight">
-              {user?.name || 'Aman Sharma'}
+              {user?.name || 'Campus Student'}
             </h1>
             <p className="text-xs sm:text-sm font-sans text-rose-100 mt-1">
-              Roll No: <strong>{user?.rollNumber || '21BCS4821'}</strong> • Academic Block B-3
+              {user?.phone ? `Mobile: +91 ${user.phone}` : 'Not signed in'}
             </p>
           </div>
         </div>
@@ -60,16 +60,16 @@ export default function ProfilePage() {
 
             <div className="space-y-3 font-sans text-xs sm:text-sm">
               <div className="flex items-center justify-between text-[#5F6B6F] pb-2 border-b border-[#EAE5DC]">
-                <span>Email Address:</span>
-                <span className="font-bold text-[#1A3D4F]">{user?.email || 'aman.cu@gmail.com'}</span>
+                <span>Name:</span>
+                <span className="font-bold text-[#1A3D4F]">{user?.name || 'Not signed in'}</span>
               </div>
               <div className="flex items-center justify-between text-[#5F6B6F] pb-2 border-b border-[#EAE5DC]">
-                <span>Phone:</span>
-                <span className="font-bold text-[#1A3D4F]">{user?.phone || '+91 98765 43210'}</span>
+                <span>Mobile Phone:</span>
+                <span className="font-bold text-[#1A3D4F]">{user?.phone ? `+91 ${user.phone}` : '—'}</span>
               </div>
               <div className="flex items-center justify-between text-[#5F6B6F]">
-                <span>Campus Block:</span>
-                <span className="font-bold text-[#1A3D4F]">{user?.campusBlock || 'Academic Block B-3'}</span>
+                <span>Role:</span>
+                <span className="font-bold text-[#1A3D4F] capitalize">{user?.role || 'Guest'}</span>
               </div>
             </div>
           </div>

@@ -110,17 +110,8 @@ export const StudentAuthModal: React.FC = () => {
           </button>
         </form>
 
-        {/* Quick Demo Fill */}
-        <div className="mt-5 pt-4 border-t border-[#EAE5DC] flex items-center justify-between text-xs font-sans text-[#8A7F70]">
-          <span>Instant Testing?</span>
-          <button
-            type="button"
-            onClick={quickLoginAsStudent}
-            className="text-[#E23744] hover:underline font-bold flex items-center gap-1"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#DBA81F]" />
-            <span>Fill Demo Student (Aman)</span>
-          </button>
+        <div className="mt-5 pt-4 border-t border-[#EAE5DC] text-center text-xs font-sans text-[#8A7F70]">
+          <span>Your mobile number will be linked to your order token for counter pickup.</span>
         </div>
       </div>
     </div>

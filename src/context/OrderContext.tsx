@@ -13,40 +13,12 @@ interface OrderContextType {
   refreshOrders: () => Promise<void>;
 }
 
-const INITIAL_SAMPLE_ORDERS: Order[] = [
-  {
-    id: 'ord-101',
-    orderNumber: 'QL-4821',
-    pickupCode: '4821',
-    studentId: 'student-demo-1',
-    studentName: 'Aman Sharma',
-    studentPhone: '9876543210',
-    studentRollNo: '21BCS4821',
-    restaurantId: 'rest-c1',
-    restaurantName: 'Food Republic C1',
-    items: [
-      { id: 'm1', name: 'Special Paneer Butter Masala Thali', price: 130, quantity: 1, isVeg: true },
-      { id: 'm5', name: 'Cold Coffee with Choco Fudge', price: 55, quantity: 1, isVeg: true }
-    ],
-    subtotal: 185,
-    platformFee: 2,
-    tax: 9,
-    total: 196,
-    status: 'preparing',
-    pickupSlot: 'Immediate (15-20 min)',
-    paymentMethod: 'Cash on Delivery',
-    paymentStatus: 'Pending',
-    createdAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-    estimatedReadyTime: '15 mins',
-    canteenCounter: 'Food Republic C1 • Counter 2',
-    readyNotificationSent: false,
-  },
-];
+const INITIAL_SAMPLE_ORDERS: Order[] = [];
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [orders, setOrders] = useState<Order[]>(INITIAL_SAMPLE_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   const fetchOrdersFromServer = useCallback(async () => {
     try {

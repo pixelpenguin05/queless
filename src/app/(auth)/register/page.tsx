@@ -25,7 +25,7 @@ export default function RegisterPage() {
   const [restaurantName, setRestaurantName] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [phone, setPhone] = useState('');
-  const [counterLocation, setCounterLocation] = useState('Food Republic C1 Counter 2');
+  const [counterLocation, setCounterLocation] = useState('');
   const [description, setDescription] = useState('');
 
   const [error, setError] = useState<string | null>(null);
