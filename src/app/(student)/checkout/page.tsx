@@ -119,7 +119,7 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-[#FAF7F2] pb-32">
       
       {/* Header */}
-      <div className="bg-white border-b border-[#EAE5DC] py-4 sticky top-18 md:top-20 z-30 shadow-xs">
+      <div className="bg-white border-b border-[#EAE5DC] py-4 sticky top-16 sm:top-18 md:top-20 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-3">
           <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-[#FAF7F2] text-[#1A3D4F] transition">
             <ChevronLeft className="w-5 h-5" />

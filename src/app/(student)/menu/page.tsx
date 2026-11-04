@@ -50,7 +50,7 @@ function MenuContent() {
     <div className="min-h-screen bg-[#FAF7F2] pb-24">
       
       {/* Sticky Filter & Search Header */}
-      <div className="sticky top-18 md:top-20 z-30 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#EAE5DC] shadow-xs">
+      <div className="sticky top-16 sm:top-18 md:top-20 z-30 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#EAE5DC] shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3">
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">

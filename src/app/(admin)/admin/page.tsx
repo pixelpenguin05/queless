@@ -283,7 +283,7 @@ export default function AdminKitchenPage() {
       )}
 
       {/* Top Header Dashboard Bar */}
-      <div className="bg-white border-b border-[#EAE5DC] py-4 sticky top-18 md:top-20 z-30 shadow-xs">
+      <div className="bg-white border-b border-[#EAE5DC] py-4 sticky top-16 sm:top-18 md:top-20 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/home" className="p-2 rounded-xl hover:bg-[#FAF7F2] text-[#1A3D4F] border border-[#EAE5DC] transition">

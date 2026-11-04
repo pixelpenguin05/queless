@@ -63,7 +63,7 @@ export default function SingleOrderPage() {
     <div className="min-h-screen bg-[#FAF7F2] pb-28">
       
       {/* Header */}
-      <div className="bg-white border-b border-[#EAE5DC] py-4 sticky top-18 md:top-20 z-30 shadow-xs">
+      <div className="bg-white border-b border-[#EAE5DC] py-4 sticky top-16 sm:top-18 md:top-20 z-30 shadow-xs">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/orders" className="p-2 rounded-xl hover:bg-[#FAF7F2] text-[#1A3D4F] transition">

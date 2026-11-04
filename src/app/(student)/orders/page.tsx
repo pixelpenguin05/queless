@@ -34,7 +34,7 @@ export default function OrdersPage() {
     <div className="min-h-screen bg-[#FAF7F2] pb-28">
       
       {/* Header */}
-      <div className="bg-white border-b border-[#EAE5DC] py-4 sticky top-18 md:top-20 z-30 shadow-xs">
+      <div className="bg-white border-b border-[#EAE5DC] py-4 sticky top-16 sm:top-18 md:top-20 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-heading font-bold text-xl sm:text-2xl text-[#1A3D4F]">
