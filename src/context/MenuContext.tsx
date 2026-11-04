@@ -49,7 +49,11 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (typeof window !== 'undefined') {
         const saved = localStorage.getItem('queueless_cu_menu');
         if (saved) {
-          try { setItems(JSON.parse(saved)); } catch {}
+          try {
+            const parsed = JSON.parse(saved);
+            const clean = Array.isArray(parsed) ? parsed.filter((i: any) => !/^m\d+$/.test(i.id)) : [];
+            setItems(clean);
+          } catch {}
         }
       }
     }

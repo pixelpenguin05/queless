@@ -37,7 +37,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (typeof window !== 'undefined') {
         const saved = localStorage.getItem('queueless_cu_orders');
         if (saved) {
-          try { setOrders(JSON.parse(saved)); } catch {}
+          try {
+            const parsed = JSON.parse(saved);
+            const clean = Array.isArray(parsed) ? parsed.filter((o: any) => o.id !== 'ord-101' && !o.id.includes('demo')) : [];
+            setOrders(clean);
+          } catch {}
         }
       }
     }

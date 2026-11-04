@@ -60,7 +60,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const savedUser = localStorage.getItem('queueless_cu_user');
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        if (parsed.id === 'student-demo-1' || parsed.id === 'owner-demo-1' || parsed.name === 'Aman Sharma') {
+          localStorage.removeItem('queueless_cu_user');
+          setUser(null);
+        } else {
+          setUser(parsed);
+        }
       } catch {
         localStorage.removeItem('queueless_cu_user');
       }
