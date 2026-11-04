@@ -1,21 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useOrders } from '@/context/OrderContext';
 import { useMenu } from '@/context/MenuContext';
 import { OrderStatusBadge } from '@/components/OrderStatusBadge';
-import { MenuItem, FoodCategory } from '@/lib/types';
+import { MenuItem, FoodCategory, Restaurant, Order } from '@/lib/types';
 import { CATEGORIES } from '@/lib/sampleData';
+import { sounds } from '@/lib/sound';
 import { 
-  ShieldAlert, 
   UtensilsCrossed, 
   Flame, 
   Clock, 
   CheckCircle2, 
-  IndianRupee, 
   Plus, 
   Trash2, 
   Eye, 
@@ -23,7 +22,6 @@ import {
   ArrowLeft,
   RefreshCw,
   X,
-  Sparkles,
   Edit3,
   Search,
   ChefHat,
@@ -31,104 +29,55 @@ import {
   Leaf,
   BarChart3,
   CheckCircle,
-  ExternalLink
+  Store,
+  ShieldCheck,
+  Phone,
+  Banknote,
+  Send,
+  AlertCircle
 } from 'lucide-react';
 
-// Curated high quality presets for quick photo selection
 const PRESET_DISH_IMAGES = [
-  {
-    name: 'Special Thali / Full Meal',
-    category: 'meals',
-    url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=600&q=80',
-    emoji: '🍱',
-  },
-  {
-    name: 'Crispy Dosa & Chutney',
-    category: 'south-indian',
-    url: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=600&q=80',
-    emoji: '🥞',
-  },
-  {
-    name: 'Burger & French Fries',
-    category: 'snacks',
-    url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80',
-    emoji: '🍔',
-  },
-  {
-    name: 'Cheesy Pizza Slice',
-    category: 'snacks',
-    url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80',
-    emoji: '🍕',
-  },
-  {
-    name: 'Hot Samosa & Chutney',
-    category: 'snacks',
-    url: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=80',
-    emoji: '🥟',
-  },
-  {
-    name: 'Chinese Noodles / Chowmein',
-    category: 'chinese',
-    url: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&w=600&q=80',
-    emoji: '🍜',
-  },
-  {
-    name: 'Royal Biryani / Fried Rice',
-    category: 'meals',
-    url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80',
-    emoji: '🍚',
-  },
-  {
-    name: 'Cold Coffee & Frappe',
-    category: 'beverages',
-    url: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=600&q=80',
-    emoji: '🥤',
-  },
-  {
-    name: 'Grilled Sandwich',
-    category: 'snacks',
-    url: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=600&q=80',
-    emoji: '🥪',
-  },
-  {
-    name: 'Fresh Bakery Pastry',
-    category: 'bakery',
-    url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80',
-    emoji: '🍰',
-  },
-  {
-    name: 'Lemon Mint Mojito Cooler',
-    category: 'beverages',
-    url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=600&q=80',
-    emoji: '🍹',
-  },
-  {
-    name: 'Masala Chai & Hot Tea',
-    category: 'beverages',
-    url: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80',
-    emoji: '☕',
-  },
+  { name: 'Special Thali', category: 'meals', url: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=600&q=80', emoji: '🍱' },
+  { name: 'Crispy Dosa', category: 'south-indian', url: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=600&q=80', emoji: '🥞' },
+  { name: 'Burger & Fries', category: 'snacks', url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80', emoji: '🍔' },
+  { name: 'Pizza Slice', category: 'snacks', url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80', emoji: '🍕' },
+  { name: 'Hot Samosa', category: 'snacks', url: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=80', emoji: '🥟' },
+  { name: 'Chinese Noodles', category: 'chinese', url: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&w=600&q=80', emoji: '🍜' },
+  { name: 'Biryani Rice', category: 'meals', url: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80', emoji: '🍚' },
+  { name: 'Cold Coffee', category: 'beverages', url: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=600&q=80', emoji: '🥤' },
+  { name: 'Grilled Sandwich', category: 'snacks', url: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=600&q=80', emoji: '🥪' },
+  { name: 'Bakery Pastry', category: 'bakery', url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80', emoji: '🍰' },
+  { name: 'Mojito Cooler', category: 'beverages', url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=600&q=80', emoji: '🍹' },
+  { name: 'Masala Chai', category: 'beverages', url: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80', emoji: '☕' },
 ];
 
 export default function AdminKitchenPage() {
   const router = useRouter();
-  const { user, quickLoginAsAdmin, updateUserName } = useAuth();
-  const { orders, activeOrders, updateOrderStatus } = useOrders();
+  const { user, loginAsOwner, loginAsAdmin, quickLoginAsAdmin } = useAuth();
+  const { orders, activeOrders, updateOrderStatus, refreshOrders } = useOrders();
   const { 
     items, 
     toggleAvailability, 
     updateItem, 
     addNewItem, 
     deleteItem,
-    resetToSampleData 
+    resetToSampleData,
+    refreshMenu
   } = useMenu();
 
-  const [activeTab, setActiveTab] = useState<'menu' | 'orders' | 'analytics'>('menu');
+  const [portalMode, setPortalMode] = useState<'canteen_owner' | 'super_admin'>('canteen_owner');
+  const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'approvals' | 'analytics'>('orders');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   
-  // Owner Name Customization Modal
-  const [isEditOwnerModalOpen, setIsEditOwnerModalOpen] = useState(false);
-  const [ownerNameInput, setOwnerNameInput] = useState(user?.name || '');
+  // Registered Restaurants state from server
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [isRegisterRestModalOpen, setIsRegisterRestModalOpen] = useState(false);
+  const [newRestName, setNewRestName] = useState('');
+  const [newRestOwner, setNewRestOwner] = useState('');
+  const [newRestPhone, setNewRestPhone] = useState('');
+  const [newRestCounter, setNewRestCounter] = useState('');
+  const [newRestDesc, setNewRestDesc] = useState('');
 
   // Menu tab filtering
   const [menuSearch, setMenuSearch] = useState('');
@@ -162,54 +111,85 @@ export default function AdminKitchenPage() {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Access Control Guard with friendly one-click switch
-  const isAuthorized = user?.role === 'admin';
+  // Fetch all restaurants
+  const fetchRestaurants = async () => {
+    try {
+      const res = await fetch('/api/restaurants?all=true');
+      const data = await res.json();
+      if (data.success) {
+        setRestaurants(data.restaurants);
+      }
+    } catch {}
+  };
 
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 rounded-3xl bg-brand-500/20 border border-brand-500/40 flex items-center justify-center text-brand-400 mb-4 shadow-lg shadow-brand-500/10">
-          <ChefHat className="w-8 h-8" />
-        </div>
-        <h1 className="text-xl font-black tracking-tight">Food Republic C1 Restaurant Portal</h1>
-        <p className="text-xs text-slate-400 mt-2 max-w-sm leading-relaxed">
-          Manage your canteen dishes, register new food items, update prices, set stock availability, and manage live student kitchen orders.
-        </p>
+  useEffect(() => {
+    fetchRestaurants();
+    const interval = setInterval(() => {
+      fetchRestaurants();
+      refreshOrders();
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [refreshOrders]);
 
-        <div className="mt-6 space-y-3 w-full max-w-xs">
-          <Link
-            href="/register?role=owner"
-            className="w-full bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-extrabold text-xs py-3.5 rounded-2xl shadow-elevated transition active:scale-98 flex items-center justify-center gap-2"
-          >
-            <ChefHat className="w-4 h-4" />
-            <span>Register by Your Owner Name</span>
-          </Link>
+  // Handle register new restaurant by an owner
+  const handleRegisterRestaurant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRestName.trim() || !newRestOwner.trim() || !newRestPhone.trim()) {
+      showToast('Please fill all required canteen details.');
+      return;
+    }
 
-          <button
-            onClick={() => {
-              quickLoginAsAdmin();
-              showToast('Logged in as Food Republic C1 Restaurant Lead');
-            }}
-            className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs py-3 rounded-2xl border border-slate-700 block transition"
-          >
-            Fast Demo Login (Chef Vikram)
-          </button>
-          
-          <Link
-            href="/home"
-            className="w-full bg-white/10 hover:bg-white/15 text-slate-300 font-bold text-xs py-2.5 rounded-2xl block transition"
-          >
-            Return to Student View
-          </Link>
-        </div>
-      </div>
-    );
-  }
+    try {
+      const res = await fetch('/api/restaurants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newRestName.trim(),
+          ownerName: newRestOwner.trim(),
+          ownerPhone: newRestPhone.trim(),
+          counterLocation: newRestCounter.trim() || 'Food Court Counter 2',
+          description: newRestDesc.trim(),
+        }),
+      });
 
-  // Kitchen Stats Calculation
+      const data = await res.json();
+      if (data.success) {
+        showToast('Restaurant registered! Status is pending Admin verification.');
+        setIsRegisterRestModalOpen(false);
+        setNewRestName('');
+        setNewRestOwner('');
+        setNewRestPhone('');
+        setNewRestCounter('');
+        setNewRestDesc('');
+        fetchRestaurants();
+      }
+    } catch {
+      showToast('Error registering restaurant.');
+    }
+  };
+
+  // Admin Approve or Reject Restaurant
+  const handleUpdateRestaurantStatus = async (restaurantId: string, status: 'approved' | 'rejected') => {
+    try {
+      const res = await fetch('/api/restaurants', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantId, status }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Canteen ${status === 'approved' ? 'APPROVED & VERIFIED' : 'REJECTED'}`);
+        fetchRestaurants();
+      }
+    } catch {
+      showToast('Failed to update status.');
+    }
+  };
+
+  // Stats calculation
   const todayRevenue = orders
     .filter((o) => o.status !== 'cancelled')
     .reduce((sum, o) => sum + o.total, 0);
@@ -223,7 +203,6 @@ export default function AdminKitchenPage() {
     ? orders 
     : orders.filter((o) => o.status === filterStatus);
 
-  // Filter menu items for management
   const managedItems = items.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(menuSearch.toLowerCase()) ||
                           item.description.toLowerCase().includes(menuSearch.toLowerCase());
@@ -235,7 +214,6 @@ export default function AdminKitchenPage() {
     return matchesSearch && matchesCat && matchesStock;
   });
 
-  // Handle register new item
   const handleCreateNewItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItemName.trim()) return;
@@ -259,10 +237,9 @@ export default function AdminKitchenPage() {
     setNewItemPrice(60);
     setNewItemPrepTime(10);
     setNewItemPopular(false);
-    showToast(`"${newItemName}" registered successfully! It is now live on the student menu.`);
+    showToast(`"${newItemName}" registered successfully!`);
   };
 
-  // Open Edit Modal
   const openEditModal = (item: MenuItem) => {
     setEditingItem(item);
     setEditItemName(item.name);
@@ -275,7 +252,6 @@ export default function AdminKitchenPage() {
     setEditItemImage(item.image);
   };
 
-  // Handle Save Edit
   const handleSaveEditItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingItem || !editItemName.trim()) return;
@@ -296,606 +272,735 @@ export default function AdminKitchenPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-28">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#1A3D4F] pb-32">
+      
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-emerald-500 text-white text-xs font-black px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-[#0F5B4C] text-white text-xs font-sans font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
           <CheckCircle className="w-4 h-4 flex-shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Admin Top Bar */}
-      <div className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 sticky top-0 z-30 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <Link href="/home" className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-black text-sm text-white">
-                {user?.campusBlock || 'Food Republic C1'}
-              </span>
-              <span className="bg-brand-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
-                Owner Panel
-              </span>
+      {/* Top Header Dashboard Bar */}
+      <div className="bg-white border-b border-[#EAE5DC] py-4 sticky top-18 md:top-20 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Link href="/home" className="p-2 rounded-xl hover:bg-[#FAF7F2] text-[#1A3D4F] border border-[#EAE5DC] transition">
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-heading font-extrabold text-xl sm:text-2xl text-[#1A3D4F] leading-tight">
+                  {portalMode === 'canteen_owner' ? 'Canteen Kitchen Hub' : 'Super Admin Portal'}
+                </h1>
+                <span className="bg-[#E7F5EE] border border-[#0F5B4C]/20 text-[#0F5B4C] text-[10px] font-bold font-sans px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  {portalMode === 'canteen_owner' ? 'Food Republic C1' : 'Campus Admin'}
+                </span>
+              </div>
+              <p className="text-xs font-sans text-[#5F6B6F] mt-0.5">
+                {portalMode === 'canteen_owner' 
+                  ? 'Real-time kitchen orders, prep tracking & menu management'
+                  : 'Manage & verify restaurant registrations across Chandigarh University'}
+              </p>
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-slate-400">
-              <span>Owner: <strong className="text-white">{user?.name || 'Restaurant Owner'}</strong></span>
+          </div>
+
+          {/* Quick Dual Switcher: Canteen Owner <-> Super Admin */}
+          <div className="flex items-center gap-2 font-sans self-start sm:self-auto">
+            <div className="flex bg-[#F5EFE6] p-1 rounded-2xl border border-[#EAE5DC]">
               <button
-                onClick={() => {
-                  setOwnerNameInput(user?.name || '');
-                  setIsEditOwnerModalOpen(true);
-                }}
-                className="text-brand-400 hover:text-brand-300 ml-1 underline text-[9px] font-semibold"
-                title="Change Owner Name"
+                onClick={() => setPortalMode('canteen_owner')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  portalMode === 'canteen_owner'
+                    ? 'bg-white text-[#1A3D4F] shadow-xs'
+                    : 'text-[#5F6B6F] hover:text-[#1A3D4F]'
+                }`}
               >
-                (Edit Name)
+                <ChefHat className="w-3.5 h-3.5 text-[#E23744]" />
+                <span>Canteen Owner</span>
+              </button>
+              <button
+                onClick={() => setPortalMode('super_admin')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  portalMode === 'super_admin'
+                    ? 'bg-[#1A3D4F] text-white shadow-xs'
+                    : 'text-[#5F6B6F] hover:text-[#1A3D4F]'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-[#E8B92C]" />
+                <span>Super Admin</span>
               </button>
             </div>
+
+            <Link
+              href="/home"
+              className="text-xs font-sans font-bold text-white bg-[#E23744] hover:bg-[#CB202D] px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span className="hidden sm:inline">Student View</span>
+            </Link>
           </div>
-        </div>
-
-        {/* Switch to Student View */}
-        <Link
-          href="/home"
-          className="text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-amber-600 hover:from-brand-500 hover:to-amber-500 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition active:scale-95"
-          title="See how students view and buy from the canteen"
-        >
-          <ShoppingBag className="w-3.5 h-3.5" />
-          <span>Student View</span>
-        </Link>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="px-4 pt-3">
-        <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800">
-          <button
-            onClick={() => setActiveTab('menu')}
-            className={`py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-              activeTab === 'menu'
-                ? 'bg-brand-500 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <UtensilsCrossed className="w-3.5 h-3.5" />
-            <span>Menu ({items.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-              activeTab === 'orders'
-                ? 'bg-brand-500 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5" />
-            <span>Orders ({activeOrders.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-              activeTab === 'analytics'
-                ? 'bg-brand-500 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span>Sales</span>
-          </button>
         </div>
       </div>
 
-      {/* TAB 1: MENU REGISTRATION & MANAGEMENT */}
-      {activeTab === 'menu' && (
-        <div className="p-4 space-y-4">
-          {/* Quick Stock Summary Bar */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2.5 text-center">
-              <span className="text-[10px] font-bold text-slate-400 block">Total Dishes</span>
-              <span className="text-lg font-black text-white">{items.length}</span>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2.5 text-center">
-              <span className="text-[10px] font-bold text-emerald-400 block">In Stock</span>
-              <span className="text-lg font-black text-emerald-400">{inStockCount}</span>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2.5 text-center">
-              <span className="text-[10px] font-bold text-rose-400 block">Sold Out</span>
-              <span className="text-lg font-black text-rose-400">{soldOutCount}</span>
-            </div>
+      {/* Main Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        {/* KPI Stats Overview Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="bg-white border border-[#EAE5DC] rounded-3xl p-5 shadow-soft">
+            <span className="eyebrow text-[#8A7F70] block">Active Orders</span>
+            <span className="font-heading font-extrabold text-3xl sm:text-4xl text-[#E23744] mt-1 block">
+              {activeOrders.length}
+            </span>
+            <span className="text-[11px] font-sans text-[#5F6B6F] mt-1 block">
+              {pendingCount} Pending • {preparingCount} Cooking
+            </span>
           </div>
 
-          {/* Action Row: Register New Dish Button & Reset */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="bg-white border border-[#EAE5DC] rounded-3xl p-5 shadow-soft">
+            <span className="eyebrow text-[#8A7F70] block">Ready for Pickup</span>
+            <span className="font-heading font-extrabold text-3xl sm:text-4xl text-[#0F5B4C] mt-1 block">
+              {readyCount}
+            </span>
+            <span className="text-[11px] font-sans text-[#5F6B6F] mt-1 block">
+              Hot meals awaiting student collection
+            </span>
+          </div>
+
+          <div className="bg-white border border-[#EAE5DC] rounded-3xl p-5 shadow-soft">
+            <span className="eyebrow text-[#8A7F70] block">Registered Canteens</span>
+            <span className="font-heading font-extrabold text-3xl sm:text-4xl text-[#1A3D4F] mt-1 block">
+              {restaurants.length}
+            </span>
+            <span className="text-[11px] font-sans text-[#5F6B6F] mt-1 block">
+              {restaurants.filter((r) => r.status === 'pending').length} pending admin verification
+            </span>
+          </div>
+
+          <div className="bg-white border border-[#EAE5DC] rounded-3xl p-5 shadow-soft">
+            <span className="eyebrow text-[#8A7F70] block">Today&apos;s Revenue</span>
+            <span className="font-heading font-extrabold text-3xl sm:text-4xl text-[#1A3D4F] mt-1 block">
+              ₹{todayRevenue}
+            </span>
+            <span className="text-[11px] font-sans text-[#0F5B4C] mt-1 block">
+              COD & UPI Settled
+            </span>
+          </div>
+        </div>
+
+        {/* Action Button Row: Register Canteen / New Dish */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-[#EAE5DC] shadow-soft">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex-1 bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white text-xs font-black py-3 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 active:scale-98 transition"
+              onClick={() => setActiveTab('orders')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold font-sans transition flex items-center gap-2 ${
+                activeTab === 'orders' ? 'bg-[#1A3D4F] text-white shadow-xs' : 'bg-[#FAF7F2] text-[#5F6B6F]'
+              }`}
+            >
+              <Flame className="w-4 h-4 text-[#E23744]" />
+              <span>Live Kitchen Orders ({activeOrders.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('menu')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold font-sans transition flex items-center gap-2 ${
+                activeTab === 'menu' ? 'bg-[#1A3D4F] text-white shadow-xs' : 'bg-[#FAF7F2] text-[#5F6B6F]'
+              }`}
+            >
+              <UtensilsCrossed className="w-4 h-4 text-[#E8B92C]" />
+              <span>Food Items ({items.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('approvals')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold font-sans transition flex items-center gap-2 ${
+                activeTab === 'approvals' ? 'bg-[#1A3D4F] text-white shadow-xs' : 'bg-[#FAF7F2] text-[#5F6B6F]'
+              }`}
+            >
+              <Store className="w-4 h-4 text-[#0F5B4C]" />
+              <span>Canteen Verifications ({restaurants.filter(r => r.status === 'pending').length} New)</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsRegisterRestModalOpen(true)}
+              className="bg-[#1A3D4F] hover:bg-[#2E5A66] text-white text-xs font-bold font-sans px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Register New Dish</span>
+              <span>Register New Canteen</span>
             </button>
 
             <button
-              onClick={() => {
-                if (confirm('Reset canteen menu to standard initial dishes?')) {
-                  resetToSampleData();
-                  showToast('Menu reset to initial dishes');
-                }
-              }}
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white p-3 rounded-2xl transition"
-              title="Reset Menu to defaults"
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-[#E23744] hover:bg-[#CB202D] text-white text-xs font-bold font-sans px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition"
             >
-              <RefreshCw className="w-4 h-4" />
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Add Food Dish</span>
             </button>
           </div>
+        </div>
 
-          {/* Search & Stock Filter */}
-          <div className="space-y-2">
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={menuSearch}
-                onChange={(e) => setMenuSearch(e.target.value)}
-                placeholder="Search registered dishes..."
-                className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-              {menuSearch && (
-                <button
-                  onClick={() => setMenuSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+        {/* TAB 1: LIVE KITCHEN ORDERS (Requirement 4, 5, 6) */}
+        {activeTab === 'orders' && (
+          <div className="space-y-6">
+            
+            {/* Status Filter Chips */}
+            <div className="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-2">
+                {(['all', 'pending', 'accepted', 'preparing', 'ready', 'completed'] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setFilterStatus(st)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold font-sans capitalize whitespace-nowrap transition ${
+                      filterStatus === st
+                        ? 'bg-[#1A3D4F] text-white shadow-xs'
+                        : 'bg-white text-[#5F6B6F] hover:text-[#1A3D4F] border border-[#EAE5DC]'
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+
+              <div className="text-xs font-sans font-bold text-[#0F5B4C] bg-[#E7F5EE] px-3 py-1.5 rounded-xl border border-[#0F5B4C]/20 whitespace-nowrap">
+                ⚡ 2-Phone Real-Time Sync Active
+              </div>
+            </div>
+
+            {/* Orders Responsive 2-Column Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredOrders.length === 0 ? (
+                <div className="col-span-full bg-white rounded-3xl p-12 text-center border border-[#EAE5DC] shadow-soft">
+                  <p className="text-sm font-sans text-[#5F6B6F]">No orders found under this status.</p>
+                </div>
+              ) : (
+                filteredOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="bg-white border border-[#EAE5DC] rounded-3xl p-5 space-y-4 shadow-soft hover:shadow-elevated transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Order Header: Token, Customer Name & Phone */}
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-heading font-black text-2xl text-[#1A3D4F]">
+                              #{order.orderNumber}
+                            </span>
+                            <span className="bg-[#FFE4E6] text-[#E23744] text-xs font-black font-sans px-2.5 py-0.5 rounded-lg border border-[#E23744]/20">
+                              CODE: {order.pickupCode || order.orderNumber.replace('QL-', '')}
+                            </span>
+                          </div>
+                          
+                          {/* Person Name & Phone Number (Requirement 4) */}
+                          <div className="mt-1 font-sans text-xs space-y-0.5">
+                            <div className="font-bold text-[#1A3D4F]">
+                              Customer: {order.studentName}
+                            </div>
+                            <div className="text-[#5F6B6F] flex items-center gap-1">
+                              <Phone className="w-3 h-3 text-[#0F5B4C]" />
+                              <span>Phone: <strong className="text-[#1A3D4F]">{order.studentPhone}</strong></span>
+                            </div>
+                            <div className="text-[#8A7F70]">
+                              Slot: <span className="font-semibold text-[#E23744]">{order.pickupSlot}</span> • Mode: <strong className="text-[#0F5B4C]">{order.paymentMethod}</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        <OrderStatusBadge status={order.status} size="sm" />
+                      </div>
+
+                      {/* Items Ordered */}
+                      <div className="bg-[#FAF7F2] rounded-2xl p-4 divide-y divide-[#EAE5DC] text-xs font-sans border border-[#EAE5DC] mt-4">
+                        {order.items.map((i, idx) => (
+                          <div key={idx} className="py-2 flex justify-between items-start">
+                            <div>
+                              <span className="font-bold text-[#1A3D4F]">{i.quantity}x {i.name}</span>
+                              {i.customNote && (
+                                <p className="text-[10px] text-[#DBA81F] font-semibold">&quot;{i.customNote}&quot;</p>
+                              )}
+                            </div>
+                            <span className="font-bold text-[#1A3D4F]">₹{i.price * i.quantity}</span>
+                          </div>
+                        ))}
+                        <div className="pt-2.5 flex justify-between items-center font-heading font-bold text-base text-[#1A3D4F]">
+                          <span className="flex items-center gap-1 font-sans text-xs font-bold text-[#0F5B4C]">
+                            <Banknote className="w-4 h-4" />
+                            <span>{order.paymentMethod}</span>
+                          </span>
+                          <span className="text-xl text-[#E23744]">₹{order.total}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Step Handover Action Controls (Requirement 5 & 6) */}
+                    <div className="pt-2 border-t border-[#EAE5DC] font-sans">
+                      {order.status === 'pending' && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={async () => {
+                              await updateOrderStatus(order.id, 'accepted');
+                              showToast(`Order #${order.orderNumber} accepted!`);
+                            }}
+                            className="flex-1 bg-[#2E5A66] hover:bg-[#1A3D4F] text-white font-extrabold text-xs py-3 rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>1. Accept Order</span>
+                          </button>
+                          <button
+                            onClick={async () => {
+                              await updateOrderStatus(order.id, 'preparing');
+                              showToast(`Started cooking #${order.orderNumber}`);
+                            }}
+                            className="flex-1 bg-[#E23744] hover:bg-[#CB202D] text-white font-extrabold text-xs py-3 rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
+                          >
+                            <Flame className="w-4 h-4" />
+                            <span>Accept & Cook Now</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {order.status === 'accepted' && (
+                        <button
+                          onClick={async () => {
+                            await updateOrderStatus(order.id, 'preparing');
+                            showToast(`Kitchen started cooking order #${order.orderNumber}! Student phone alerted.`);
+                          }}
+                          className="w-full bg-[#E8B92C] hover:bg-[#DBA81F] text-[#1A3D4F] font-extrabold text-xs py-3 rounded-xl transition shadow-xs flex items-center justify-center gap-2"
+                        >
+                          <Flame className="w-4 h-4 fill-[#1A3D4F]" />
+                          <span>2. Start Preparing Food (Send &quot;Preparing&quot; Alert to Student)</span>
+                        </button>
+                      )}
+
+                      {order.status === 'preparing' && (
+                        <button
+                          onClick={async () => {
+                            await updateOrderStatus(order.id, 'ready');
+                            showToast(`Sent "Food Ready" notification to student for #${order.orderNumber}!`);
+                          }}
+                          className="w-full bg-[#0F5B4C] hover:bg-[#0B4438] text-white font-extrabold text-xs py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2 animate-pulse"
+                        >
+                          <Send className="w-4 h-4" />
+                          <span>3. Food Done! Send &quot;Ready for Pickup&quot; Notification</span>
+                        </button>
+                      )}
+
+                      {order.status === 'ready' && (
+                        <div className="space-y-2">
+                          <div className="bg-[#E7F5EE] p-2.5 rounded-xl border border-[#0F5B4C]/30 text-center text-xs font-bold text-[#0F5B4C]">
+                            🔔 Notification sent to student! Awaiting pickup at Counter 2
+                          </div>
+                          <button
+                            onClick={async () => {
+                              await updateOrderStatus(order.id, 'completed');
+                              showToast(`Order #${order.orderNumber} delivered & handed over to student! Cash collected.`);
+                            }}
+                            className="w-full bg-[#1A3D4F] hover:bg-black text-white font-extrabold text-xs py-3 rounded-xl transition shadow-xs flex items-center justify-center gap-2"
+                          >
+                            <CheckCircle2 className="w-4 h-4 text-[#E8B92C]" />
+                            <span>4. Hand Over Food to Student & Collect ₹{order.total} (Delivered)</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {order.status === 'completed' && (
+                        <div className="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#EAE5DC] text-center text-xs font-semibold text-[#0F5B4C] flex items-center justify-center gap-1.5">
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Delivered & Paid via {order.paymentMethod}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
-
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setMenuCatFilter(cat.id as FoodCategory)}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition flex items-center gap-1 ${
-                    menuCatFilter === cat.id
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
-                >
-                  <span>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Stock status filter */}
-            <div className="flex items-center gap-1.5 pt-1">
-              {(['all', 'in_stock', 'sold_out'] as const).map((st) => (
-                <button
-                  key={st}
-                  onClick={() => setStockFilter(st)}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition ${
-                    stockFilter === st
-                      ? 'bg-brand-500/20 text-brand-400 border border-brand-500/40'
-                      : 'bg-slate-900 text-slate-500 hover:text-slate-400 border border-slate-800'
-                  }`}
-                >
-                  {st.replace('_', ' ')}
-                </button>
-              ))}
-              <span className="text-[10px] text-slate-500 ml-auto font-medium">
-                Showing {managedItems.length} dishes
-              </span>
-            </div>
           </div>
+        )}
 
-          {/* Dishes List */}
-          <div className="space-y-3 pt-1">
-            {managedItems.length === 0 ? (
-              <div className="bg-slate-900/50 rounded-3xl p-8 text-center border border-slate-800">
-                <div className="text-3xl mb-2">🍽️</div>
-                <p className="text-xs text-slate-400">No dishes match your filters.</p>
-                <button
-                  onClick={() => {
-                    setMenuSearch('');
-                    setMenuCatFilter('all');
-                    setStockFilter('all');
-                  }}
-                  className="mt-3 text-xs font-bold text-brand-400 hover:underline"
-                >
-                  Clear filters
-                </button>
+        {/* TAB 2: MENU FOOD ITEMS */}
+        {activeTab === 'menu' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl p-5 border border-[#EAE5DC] shadow-soft space-y-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-[#8A7F70] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={menuSearch}
+                    onChange={(e) => setMenuSearch(e.target.value)}
+                    placeholder="Search dishes..."
+                    className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-2xl pl-10 pr-4 py-2.5 text-xs text-[#1A3D4F] placeholder-[#8A7F70] focus:outline-none focus:ring-2 focus:ring-[#E8B92C] font-sans"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="bg-[#E23744] hover:bg-[#CB202D] text-white text-xs font-bold font-sans py-2.5 px-5 rounded-2xl flex items-center gap-2 shadow-sm"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <span>Register New Dish</span>
+                  </button>
+                </div>
               </div>
-            ) : (
-              managedItems.map((item) => (
+
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-2 border-t border-[#EAE5DC]">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setMenuCatFilter(cat.id as FoodCategory)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold font-sans whitespace-nowrap transition flex items-center gap-1.5 ${
+                      menuCatFilter === cat.id
+                        ? 'bg-[#1A3D4F] text-white shadow-xs'
+                        : 'bg-[#FAF7F2] text-[#5F6B6F] hover:text-[#1A3D4F] border border-[#EAE5DC]'
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Dishes Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {managedItems.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-slate-900 border border-slate-800 hover:border-slate-700/80 rounded-3xl p-3.5 space-y-3 transition shadow-sm"
+                  className="bg-white border border-[#EAE5DC] rounded-3xl p-4 space-y-4 shadow-soft hover:shadow-elevated transition-all flex flex-col justify-between"
                 >
-                  <div className="flex items-start gap-3">
-                    {/* Image with sold out badge */}
-                    <div className="w-16 h-16 rounded-2xl bg-slate-800 overflow-hidden relative flex-shrink-0">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-20 h-20 rounded-2xl bg-[#F5EFE6] overflow-hidden relative flex-shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img 
                         src={item.image || PRESET_DISH_IMAGES[0].url} 
                         alt={item.name} 
                         className={`w-full h-full object-cover ${!item.isAvailable ? 'grayscale opacity-50' : ''}`} 
                       />
-                      <div className="absolute top-1 left-1 bg-slate-950/80 backdrop-blur-sm p-0.5 rounded">
-                        {item.isVeg ? (
-                          <div className="w-2.5 h-2.5 border border-emerald-500 rounded-sm flex items-center justify-center">
-                            <div className="w-1 h-1 bg-emerald-500 rounded-full" />
-                          </div>
-                        ) : (
-                          <div className="w-2.5 h-2.5 border border-rose-500 rounded-sm flex items-center justify-center">
-                            <div className="w-0 h-0 border-l-[2px] border-l-transparent border-r-[2px] border-r-transparent border-b-[4px] border-b-rose-500" />
-                          </div>
-                        )}
-                      </div>
                     </div>
-
-                    {/* Details */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <h3 className="text-xs font-bold text-white truncate">{item.name}</h3>
+                        <h3 className="font-heading font-bold text-base text-[#1A3D4F] truncate">{item.name}</h3>
                         {item.popular && (
-                          <span className="bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[9px] font-black px-1.5 rounded">
+                          <span className="bg-[#FBF1D4] text-[#8A6A0B] text-[10px] font-black px-1.5 py-0.2 rounded font-sans">
                             Popular
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{item.description}</p>
+                      <p className="text-xs font-sans text-[#5F6B6F] line-clamp-2 mt-1">{item.description}</p>
                       
-                      <div className="flex items-center gap-2 mt-1.5 text-[11px]">
-                        <span className="font-extrabold text-white">₹{item.price}</span>
-                        <span className="text-slate-500">•</span>
-                        <span className="text-slate-400 capitalize">{item.category}</span>
-                        <span className="text-slate-500">•</span>
-                        <span className="text-slate-400 flex items-center gap-0.5">
-                          <Clock className="w-2.5 h-2.5" /> {item.preparationTimeMin}m
-                        </span>
+                      <div className="flex items-center gap-2 mt-2 text-xs font-sans">
+                        <span className="font-extrabold text-[#1A3D4F]">₹{item.price}</span>
+                        <span className="text-[#8A7F70]">•</span>
+                        <span className="text-[#5F6B6F] capitalize">{item.category}</span>
+                        <span className="text-[#8A7F70]">•</span>
+                        <span className="text-[#5F6B6F]">{item.preparationTimeMin}m prep</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Management Action Bar */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 gap-2">
-                    {/* Stock Status Toggle */}
+                  <div className="flex items-center justify-between pt-3 border-t border-[#EAE5DC] gap-2 font-sans">
                     <button
                       onClick={async () => {
                         await toggleAvailability(item.id);
-                        showToast(
-                          item.isAvailable 
-                            ? `Marked "${item.name}" as Sold Out` 
-                            : `Marked "${item.name}" as In Stock`
-                        );
+                        showToast(`Updated "${item.name}" availability`);
                       }}
-                      className={`flex-1 py-1.5 px-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition ${
+                      className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
                         item.isAvailable
-                          ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
-                          : 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 border border-rose-500/30'
+                          ? 'bg-[#E7F5EE] text-[#0F5B4C] border border-[#0F5B4C]/20'
+                          : 'bg-[#FFF5F5] text-[#CC191D] border border-[#CC191D]/20'
                       }`}
                     >
                       {item.isAvailable ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                      <span>{item.isAvailable ? 'In Stock (Live)' : 'Sold Out (Hidden)'}</span>
+                      <span>{item.isAvailable ? 'In Stock (Live)' : 'Sold Out'}</span>
                     </button>
 
-                    {/* Edit Dish */}
                     <button
                       onClick={() => openEditModal(item)}
-                      className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition"
-                      title="Edit Dish details"
+                      className="p-2 bg-[#FAF7F2] hover:bg-[#EAE5DC] text-[#1A3D4F] border border-[#EAE5DC] rounded-xl transition"
                     >
-                      <Edit3 className="w-3.5 h-3.5" />
+                      <Edit3 className="w-4 h-4" />
                     </button>
 
-                    {/* Delete Dish */}
                     <button
                       onClick={async () => {
-                        if (confirm(`Are you sure you want to delete "${item.name}" from the menu?`)) {
+                        if (confirm(`Delete "${item.name}"?`)) {
                           await deleteItem(item.id);
                           showToast(`Deleted "${item.name}"`);
                         }
                       }}
-                      className="p-2 bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-400 rounded-xl transition"
-                      title="Delete Dish"
+                      className="p-2 bg-[#FAF7F2] hover:bg-[#FFF5F5] text-[#8A7F70] hover:text-[#CC191D] border border-[#EAE5DC] rounded-xl transition"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-              ))
-            )}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* TAB 2: LIVE KITCHEN ORDERS */}
-      {activeTab === 'orders' && (
-        <div className="p-4 space-y-4">
-          {/* Order Status Filter Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            {(['all', 'pending', 'accepted', 'preparing', 'ready', 'completed'] as const).map((st) => (
-              <button
-                key={st}
-                onClick={() => setFilterStatus(st)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize whitespace-nowrap transition ${
-                  filterStatus === st
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
-                }`}
-              >
-                {st}
-              </button>
-            ))}
-          </div>
-
-          {/* Orders List */}
-          <div className="space-y-3">
-            {filteredOrders.length === 0 ? (
-              <div className="bg-slate-900/50 rounded-3xl p-8 text-center border border-slate-800">
-                <p className="text-xs text-slate-400">No orders under this status.</p>
-              </div>
-            ) : (
-              filteredOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="bg-slate-900 border border-slate-800 rounded-3xl p-4 space-y-3 shadow-soft"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-base font-black text-white">
-                          #{order.orderNumber}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {order.studentName} ({order.studentRollNo})
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-slate-400 mt-0.5 block">
-                        Slot: <strong className="text-amber-400">{order.pickupSlot}</strong> • {order.paymentMethod}
-                      </span>
-                    </div>
-
-                    <OrderStatusBadge status={order.status} size="sm" />
-                  </div>
-
-                  {/* Order Items */}
-                  <div className="bg-slate-950/70 rounded-2xl p-3 divide-y divide-slate-850 text-xs">
-                    {order.items.map((i, idx) => (
-                      <div key={idx} className="py-1.5 flex justify-between items-start">
-                        <div>
-                          <span className="font-bold text-slate-200">{i.quantity}x {i.name}</span>
-                          {i.customNote && (
-                            <p className="text-[10px] text-amber-300">&quot;{i.customNote}&quot;</p>
-                          )}
-                        </div>
-                        <span className="font-semibold text-slate-300">₹{i.price * i.quantity}</span>
-                      </div>
-                    ))}
-                    <div className="pt-2 flex justify-between font-black text-brand-400">
-                      <span>Total:</span>
-                      <span>₹{order.total}</span>
-                    </div>
-                  </div>
-
-                  {/* Action Controls */}
-                  <div className="flex items-center gap-2 pt-1">
-                    {order.status === 'pending' && (
-                      <button
-                        onClick={async () => {
-                          await updateOrderStatus(order.id, 'accepted');
-                          showToast(`Accepted order #${order.orderNumber}`);
-                        }}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition shadow-xs"
-                      >
-                        Accept Order
-                      </button>
-                    )}
-
-                    {order.status === 'accepted' && (
-                      <button
-                        onClick={async () => {
-                          await updateOrderStatus(order.id, 'preparing');
-                          showToast(`Started cooking order #${order.orderNumber}`);
-                        }}
-                        className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
-                      >
-                        <Flame className="w-3.5 h-3.5" />
-                        <span>Start Cooking</span>
-                      </button>
-                    )}
-
-                    {order.status === 'preparing' && (
-                      <button
-                        onClick={async () => {
-                          await updateOrderStatus(order.id, 'ready');
-                          showToast(`Order #${order.orderNumber} is READY at pickup counter!`);
-                        }}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Mark Ready for Pickup</span>
-                      </button>
-                    )}
-
-                    {order.status === 'ready' && (
-                      <button
-                        onClick={async () => {
-                          await updateOrderStatus(order.id, 'completed');
-                          showToast(`Order #${order.orderNumber} completed & handed over!`);
-                        }}
-                        className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition shadow-xs"
-                      >
-                        Handed Over to Student
-                      </button>
-                    )}
-
-                    {order.status !== 'completed' && order.status !== 'cancelled' && (
-                      <button
-                        onClick={async () => {
-                          if (confirm(`Cancel order #${order.orderNumber}?`)) {
-                            await updateOrderStatus(order.id, 'cancelled');
-                            showToast(`Order #${order.orderNumber} cancelled`);
-                          }
-                        }}
-                        className="px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-950/40 rounded-xl"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
+        {/* TAB 3: CANTEEN VERIFICATIONS & APPROVALS (Requirement 3) */}
+        {activeTab === 'approvals' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EAE5DC] shadow-soft">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="font-heading font-bold text-2xl text-[#1A3D4F]">
+                    Canteen & Restaurant Registrations
+                  </h2>
+                  <p className="text-xs font-sans text-[#5F6B6F] mt-1">
+                    Super Admin review panel: Accept or reject canteens before their menu goes live.
+                  </p>
                 </div>
-              ))
-            )}
+
+                <button
+                  onClick={() => setIsRegisterRestModalOpen(true)}
+                  className="bg-[#E23744] hover:bg-[#CB202D] text-white text-xs font-bold font-sans py-2.5 px-4 rounded-xl flex items-center gap-1.5 shadow-sm"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>Register Canteen</span>
+                </button>
+              </div>
+
+              <div className="space-y-4 pt-2">
+                {restaurants.map((rest) => (
+                  <div
+                    key={rest.id}
+                    className="p-5 rounded-3xl border border-[#EAE5DC] bg-[#FAF7F2] flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-[#F5EFE6] text-[#1A3D4F] flex items-center justify-center font-bold flex-shrink-0">
+                        <Store className="w-7 h-7 text-[#E23744]" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-heading font-bold text-lg text-[#1A3D4F]">{rest.name}</h3>
+                          <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                            rest.status === 'approved'
+                              ? 'bg-[#E7F5EE] text-[#0F5B4C] border border-[#0F5B4C]/20'
+                              : rest.status === 'pending'
+                              ? 'bg-[#FBF1D4] text-[#8A6A0B] border border-[#E8B92C]/40 animate-pulse'
+                              : 'bg-[#FFF5F5] text-[#CC191D]'
+                          }`}>
+                            {rest.status === 'approved' ? '✓ Verified & Active' : rest.status === 'pending' ? '⏳ Pending Approval' : '✕ Rejected'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#5F6B6F] mt-1">
+                          Owner: <strong>{rest.ownerName}</strong> • Phone: <strong>{rest.ownerPhone}</strong>
+                        </p>
+                        <p className="text-xs text-[#8A7F70] mt-0.5">
+                          Location: {rest.counterLocation}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Admin Action Buttons (Requirement 3) */}
+                    <div className="flex items-center gap-2 self-start md:self-auto">
+                      {rest.status !== 'approved' && (
+                        <button
+                          onClick={() => handleUpdateRestaurantStatus(rest.id, 'approved')}
+                          className="bg-[#0F5B4C] hover:bg-[#0B4438] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm transition flex items-center gap-1.5"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Approve & Verify</span>
+                        </button>
+                      )}
+
+                      {rest.status !== 'rejected' && (
+                        <button
+                          onClick={() => handleUpdateRestaurantStatus(rest.id, 'rejected')}
+                          className="bg-white hover:bg-[#FFF5F5] text-[#CC191D] border border-[#EAE5DC] text-xs font-bold py-2.5 px-3 rounded-xl transition"
+                        >
+                          Reject
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* TAB 3: SALES & ANALYTICS */}
-      {activeTab === 'analytics' && (
-        <div className="p-4 space-y-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
-              Food Republic C1 Sales Overview
-            </h2>
+      </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800">
-                <span className="text-[11px] text-slate-400 block">Total Revenue</span>
-                <span className="text-xl font-black text-brand-400 mt-1 block">₹{todayRevenue}</span>
+      {/* REGISTER NEW RESTAURANT MODAL (Requirement 2) */}
+      {isRegisterRestModalOpen && (
+        <div className="fixed inset-0 z-50 bg-[#1A3D4F]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#EAE5DC] w-full max-w-lg rounded-4xl p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-[#EAE5DC] sticky top-0 bg-white z-10">
+              <div>
+                <h2 className="font-heading font-bold text-xl text-[#1A3D4F]">Register Canteen / Restaurant</h2>
+                <p className="text-xs font-sans text-[#5F6B6F]">Will be submitted for Super Admin verification</p>
               </div>
-              <div className="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800">
-                <span className="text-[11px] text-slate-400 block">Total Orders</span>
-                <span className="text-xl font-black text-white mt-1 block">{orders.length}</span>
-              </div>
+              <button onClick={() => setIsRegisterRestModalOpen(false)} className="text-[#8A7F70] p-1 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="divide-y divide-slate-800 text-xs pt-2">
-              <div className="py-2.5 flex justify-between">
-                <span className="text-slate-400">Active Live Orders</span>
-                <span className="font-bold text-amber-400">{activeOrders.length}</span>
+            <form onSubmit={handleRegisterRestaurant} className="mt-5 space-y-4 text-xs font-sans">
+              <div>
+                <label className="eyebrow text-[#8A7F70] block mb-1">Canteen / Restaurant Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newRestName}
+                  onChange={(e) => setNewRestName(e.target.value)}
+                  placeholder="e.g. Nescafe Campus Corner"
+                  className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F] focus:outline-none focus:ring-2 focus:ring-[#E8B92C]"
+                />
               </div>
-              <div className="py-2.5 flex justify-between">
-                <span className="text-slate-400">Completed Pickups</span>
-                <span className="font-bold text-emerald-400">
-                  {orders.filter((o) => o.status === 'completed').length}
-                </span>
+
+              <div>
+                <label className="eyebrow text-[#8A7F70] block mb-1">Owner / Lead Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newRestOwner}
+                  onChange={(e) => setNewRestOwner(e.target.value)}
+                  placeholder="e.g. Vikram Sharma"
+                  className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F] focus:outline-none focus:ring-2 focus:ring-[#E8B92C]"
+                />
               </div>
-              <div className="py-2.5 flex justify-between">
-                <span className="text-slate-400">Cancelled</span>
-                <span className="font-bold text-rose-400">
-                  {orders.filter((o) => o.status === 'cancelled').length}
-                </span>
+
+              <div>
+                <label className="eyebrow text-[#8A7F70] block mb-1">Contact Phone Number *</label>
+                <input
+                  type="tel"
+                  required
+                  value={newRestPhone}
+                  onChange={(e) => setNewRestPhone(e.target.value)}
+                  placeholder="e.g. 9811122334"
+                  className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F] focus:outline-none focus:ring-2 focus:ring-[#E8B92C]"
+                />
               </div>
-            </div>
+
+              <div>
+                <label className="eyebrow text-[#8A7F70] block mb-1">Counter Location in Campus *</label>
+                <input
+                  type="text"
+                  required
+                  value={newRestCounter}
+                  onChange={(e) => setNewRestCounter(e.target.value)}
+                  placeholder="e.g. Food Republic C1 Ground Floor Counter 3"
+                  className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F] focus:outline-none focus:ring-2 focus:ring-[#E8B92C]"
+                />
+              </div>
+
+              <div>
+                <label className="eyebrow text-[#8A7F70] block mb-1">Description / Speciality</label>
+                <input
+                  type="text"
+                  value={newRestDesc}
+                  onChange={(e) => setNewRestDesc(e.target.value)}
+                  placeholder="e.g. Cold coffee, sandwiches, and bakery fresh rolls"
+                  className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F] focus:outline-none focus:ring-2 focus:ring-[#E8B92C]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-[#E23744] hover:bg-[#CB202D] text-white font-sans font-extrabold py-3.5 rounded-2xl shadow-elevated transition active:scale-98 text-sm"
+              >
+                Submit Canteen for Admin Verification
+              </button>
+            </form>
           </div>
         </div>
       )}
 
       {/* REGISTER NEW DISH MODAL */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+        <div className="fixed inset-0 z-50 bg-[#1A3D4F]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#EAE5DC] w-full max-w-lg rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-[#EAE5DC] sticky top-0 bg-white z-10">
               <div>
-                <h2 className="font-extrabold text-sm text-white">Register New Canteen Dish</h2>
-                <p className="text-[10px] text-slate-400">Will immediately appear on student menu</p>
+                <h2 className="font-heading font-bold text-xl text-[#1A3D4F]">Register Food Dish</h2>
+                <p className="text-xs font-sans text-[#5F6B6F]">Dishes will immediately be orderable by students</p>
               </div>
-              <button 
-                onClick={() => setIsAddModalOpen(false)} 
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
-              >
+              <button onClick={() => setIsAddModalOpen(false)} className="text-[#8A7F70] p-1 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateNewItem} className="mt-4 space-y-3.5 text-xs">
+            <form onSubmit={handleCreateNewItem} className="mt-5 space-y-4 text-xs font-sans">
               <div>
-                <label className="text-slate-400 block mb-1 font-semibold">Dish Name *</label>
+                <label className="eyebrow text-[#8A7F70] block mb-1">Dish Name *</label>
                 <input
                   type="text"
                   required
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
-                  placeholder="e.g. Special Amritsari Kulcha"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="e.g. Butter Paneer Thali"
+                  className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F] focus:outline-none focus:ring-2 focus:ring-[#E8B92C]"
                 />
               </div>
 
               <div>
-                <label className="text-slate-400 block mb-1 font-semibold">Description</label>
+                <label className="eyebrow text-[#8A7F70] block mb-1">Description</label>
                 <input
                   type="text"
                   value={newItemDesc}
                   onChange={(e) => setNewItemDesc(e.target.value)}
-                  placeholder="e.g. Served with spicy chole, butter and pickle"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="e.g. Served hot with butter naan and salad"
+                  className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F] focus:outline-none focus:ring-2 focus:ring-[#E8B92C]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-400 block mb-1 font-semibold">Price (₹) *</label>
+                  <label className="eyebrow text-[#8A7F70] block mb-1">Price (₹) *</label>
                   <input
                     type="number"
                     required
                     min={1}
                     value={newItemPrice}
                     onChange={(e) => setNewItemPrice(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F] focus:outline-none focus:ring-2 focus:ring-[#E8B92C]"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-400 block mb-1 font-semibold">Prep Time (min) *</label>
+                  <label className="eyebrow text-[#8A7F70] block mb-1">Prep Time (min) *</label>
                   <input
                     type="number"
                     required
                     min={1}
                     value={newItemPrepTime}
                     onChange={(e) => setNewItemPrepTime(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F] focus:outline-none focus:ring-2 focus:ring-[#E8B92C]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-400 block mb-1 font-semibold">Category *</label>
+                <label className="eyebrow text-[#8A7F70] block mb-1">Category *</label>
                 <select
                   value={newItemCat}
                   onChange={(e) => setNewItemCat(e.target.value as FoodCategory)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F] focus:outline-none focus:ring-2 focus:ring-[#E8B92C]"
                 >
                   {CATEGORIES.filter((c) => c.id !== 'all').map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.icon} {c.label}
-                    </option>
+                    <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Photo Presets Gallery */}
               <div>
-                <label className="text-slate-400 block mb-1.5 font-semibold">
-                  Choose Photo Preset (or paste custom link below)
-                </label>
-                <div className="grid grid-cols-4 gap-2 max-h-36 overflow-y-auto no-scrollbar p-1 bg-slate-950 rounded-2xl border border-slate-800">
+                <label className="eyebrow text-[#8A7F70] block mb-1.5">Select Preset Photo</label>
+                <div className="grid grid-cols-4 gap-2 max-h-36 overflow-y-auto no-scrollbar p-1.5 bg-[#FAF7F2] rounded-2xl border border-[#EAE5DC]">
                   {PRESET_DISH_IMAGES.map((preset, idx) => (
                     <button
                       type="button"
                       key={idx}
-                      onClick={() => {
-                        setNewItemImage(preset.url);
-                        if (!newItemCat || newItemCat === 'snacks') {
-                          setNewItemCat(preset.category as FoodCategory);
-                        }
-                      }}
+                      onClick={() => setNewItemImage(preset.url)}
                       className={`relative aspect-square rounded-xl overflow-hidden border-2 transition ${
-                        newItemImage === preset.url
-                          ? 'border-brand-500 scale-95 shadow-md'
-                          : 'border-transparent opacity-75 hover:opacity-100'
+                        newItemImage === preset.url ? 'border-[#E23744] scale-95 shadow-md' : 'border-transparent opacity-80 hover:opacity-100'
                       }`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -906,50 +1011,23 @@ export default function AdminKitchenPage() {
                 </div>
               </div>
 
-              {/* Custom Image URL input */}
-              <div>
-                <label className="text-slate-400 block mb-1 font-semibold">Custom Image URL</label>
-                <input
-                  type="url"
-                  value={newItemImage}
-                  onChange={(e) => setNewItemImage(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-
-              {/* Veg and Popular Toggles */}
-              <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2.5">
-                <label className="flex items-center gap-2 cursor-pointer">
+              <div className="bg-[#FAF7F2] p-4 rounded-2xl border border-[#EAE5DC] space-y-3">
+                <label className="flex items-center gap-2.5 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={newItemIsVeg}
                     onChange={(e) => setNewItemIsVeg(e.target.checked)}
-                    className="rounded text-brand-500 w-4 h-4 bg-slate-900 border-slate-700"
+                    className="rounded text-[#0F5B4C] w-4 h-4"
                   />
-                  <span className="text-white font-medium flex items-center gap-1">
-                    🌱 Pure Vegetarian Dish
-                  </span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={newItemPopular}
-                    onChange={(e) => setNewItemPopular(e.target.checked)}
-                    className="rounded text-brand-500 w-4 h-4 bg-slate-900 border-slate-700"
-                  />
-                  <span className="text-white font-medium flex items-center gap-1">
-                    🔥 Feature as Trending on Student Home
-                  </span>
+                  <span className="text-[#1A3D4F] font-bold">🌱 Pure Vegetarian Dish</span>
                 </label>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-black py-3 rounded-2xl shadow-elevated transition active:scale-98"
+                className="w-full bg-[#E23744] hover:bg-[#CB202D] text-white font-sans font-extrabold py-3.5 rounded-2xl shadow-elevated text-sm"
               >
-                Register Dish to Menu
+                Register Dish to Canteen Menu
               </button>
             </form>
           </div>
@@ -958,143 +1036,58 @@ export default function AdminKitchenPage() {
 
       {/* EDIT DISH MODAL */}
       {editingItem && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+        <div className="fixed inset-0 z-50 bg-[#1A3D4F]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#EAE5DC] w-full max-w-lg rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-[#EAE5DC] sticky top-0 bg-white z-10">
               <div>
-                <h2 className="font-extrabold text-sm text-white">Edit Dish Details</h2>
-                <p className="text-[10px] text-slate-400">Updating will immediately reflect for all students</p>
+                <h2 className="font-heading font-bold text-xl text-[#1A3D4F]">Edit Dish Details</h2>
+                <p className="text-xs font-sans text-[#5F6B6F]">Updates live menu instantly</p>
               </div>
-              <button 
-                onClick={() => setEditingItem(null)} 
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
-              >
+              <button onClick={() => setEditingItem(null)} className="text-[#8A7F70] p-1 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditItem} className="mt-4 space-y-3.5 text-xs">
+            <form onSubmit={handleSaveEditItem} className="mt-5 space-y-4 text-xs font-sans">
               <div>
-                <label className="text-slate-400 block mb-1 font-semibold">Dish Name</label>
+                <label className="eyebrow text-[#8A7F70] block mb-1">Dish Name</label>
                 <input
                   type="text"
                   required
                   value={editItemName}
                   onChange={(e) => setEditItemName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
+                  className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F]"
                 />
               </div>
 
-              <div>
-                <label className="text-slate-400 block mb-1 font-semibold">Description</label>
-                <input
-                  type="text"
-                  value={editItemDesc}
-                  onChange={(e) => setEditItemDesc(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-400 block mb-1 font-semibold">Price (₹)</label>
+                  <label className="eyebrow text-[#8A7F70] block mb-1">Price (₹)</label>
                   <input
                     type="number"
                     required
                     min={1}
                     value={editItemPrice}
                     onChange={(e) => setEditItemPrice(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
+                    className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F]"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-400 block mb-1 font-semibold">Prep Time (min)</label>
+                  <label className="eyebrow text-[#8A7F70] block mb-1">Prep Time (min)</label>
                   <input
                     type="number"
                     required
                     min={1}
                     value={editItemPrepTime}
                     onChange={(e) => setEditItemPrepTime(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
+                    className="w-full bg-[#FAF7F2] border border-[#EAE5DC] rounded-xl p-3 text-[#1A3D4F]"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="text-slate-400 block mb-1 font-semibold">Category</label>
-                <select
-                  value={editItemCat}
-                  onChange={(e) => setEditItemCat(e.target.value as FoodCategory)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
-                >
-                  {CATEGORIES.filter((c) => c.id !== 'all').map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.icon} {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Photo presets */}
-              <div>
-                <label className="text-slate-400 block mb-1.5 font-semibold">
-                  Change Photo
-                </label>
-                <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto no-scrollbar p-1 bg-slate-950 rounded-2xl border border-slate-800">
-                  {PRESET_DISH_IMAGES.map((preset, idx) => (
-                    <button
-                      type="button"
-                      key={idx}
-                      onClick={() => setEditItemImage(preset.url)}
-                      className={`relative aspect-square rounded-xl overflow-hidden border-2 transition ${
-                        editItemImage === preset.url
-                          ? 'border-brand-500 scale-95 shadow-md'
-                          : 'border-transparent opacity-75 hover:opacity-100'
-                      }`}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={preset.url} alt={preset.name} className="w-full h-full object-cover" />
-                      <span className="absolute bottom-1 right-1 text-xs">{preset.emoji}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-slate-400 block mb-1 font-semibold">Image URL</label>
-                <input
-                  type="url"
-                  value={editItemImage}
-                  onChange={(e) => setEditItemImage(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"
-                />
-              </div>
-
-              <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2.5">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editItemIsVeg}
-                    onChange={(e) => setEditItemIsVeg(e.target.checked)}
-                    className="rounded text-brand-500 w-4 h-4"
-                  />
-                  <span className="text-white font-medium">🌱 Pure Vegetarian Dish</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={editItemPopular}
-                    onChange={(e) => setEditItemPopular(e.target.checked)}
-                    className="rounded text-brand-500 w-4 h-4"
-                  />
-                  <span className="text-white font-medium">🔥 Feature as Trending on Home</span>
-                </label>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-black py-3 rounded-2xl shadow-elevated transition active:scale-98"
+                className="w-full bg-[#E23744] hover:bg-[#CB202D] text-white font-sans font-extrabold py-3.5 rounded-2xl shadow-elevated text-sm"
               >
                 Save Changes
               </button>
@@ -1103,56 +1096,6 @@ export default function AdminKitchenPage() {
         </div>
       )}
 
-      {/* EDIT OWNER NAME MODAL */}
-      {isEditOwnerModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div>
-                <h2 className="font-extrabold text-sm text-white">Change Owner Name</h2>
-                <p className="text-[10px] text-slate-400">Updates your name on the restaurant portal</p>
-              </div>
-              <button 
-                onClick={() => setIsEditOwnerModalOpen(false)} 
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (ownerNameInput.trim()) {
-                  await updateUserName(ownerNameInput.trim());
-                  setIsEditOwnerModalOpen(false);
-                  showToast(`Owner name updated to "${ownerNameInput.trim()}"`);
-                }
-              }}
-              className="mt-4 space-y-3.5 text-xs"
-            >
-              <div>
-                <label className="text-slate-400 block mb-1 font-semibold">Your Owner Name</label>
-                <input
-                  type="text"
-                  required
-                  value={ownerNameInput}
-                  onChange={(e) => setOwnerNameInput(e.target.value)}
-                  placeholder="e.g. Chef Vikram / Muskan"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-black py-2.5 rounded-xl shadow-elevated transition active:scale-98"
-              >
-                Save Owner Name
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

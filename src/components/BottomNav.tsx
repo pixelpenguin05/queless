@@ -25,13 +25,13 @@ export const BottomNav: React.FC = () => {
       label: 'Orders', 
       icon: ReceiptText,
       badge: hasReadyOrder ? 'Ready!' : activeOrders.length > 0 ? String(activeOrders.length) : undefined,
-      badgeColor: hasReadyOrder ? 'bg-emerald-500 animate-bounce' : 'bg-brand-500'
+      badgeColor: hasReadyOrder ? 'bg-emerald-600 animate-bounce' : 'bg-[#E23744]'
     },
     { href: '/profile', label: 'Profile', icon: User },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200/80 shadow-lg pb-safe">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FAF7F2]/95 backdrop-blur-lg border-t border-[#EAE5DC] shadow-lg pb-safe">
       <div className="max-w-md mx-auto px-4 h-16 flex items-center justify-around">
         {links.map((link) => {
           const isActive = pathname === link.href || (link.href !== '/home' && pathname.startsWith(link.href));
@@ -42,7 +42,7 @@ export const BottomNav: React.FC = () => {
               key={link.href}
               href={link.href}
               className={`relative flex flex-col items-center justify-center flex-1 py-1 transition-all ${
-                isActive ? 'text-brand-600' : 'text-slate-400 hover:text-slate-600'
+                isActive ? 'text-[#E23744]' : 'text-[#8A7F70] hover:text-[#1A3D4F]'
               }`}
             >
               <div className="relative">
@@ -53,7 +53,7 @@ export const BottomNav: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] mt-1 ${isActive ? 'font-black' : 'font-medium'}`}>
+              <span className={`text-[10px] mt-1 font-sans ${isActive ? 'font-extrabold text-[#E23744]' : 'font-semibold'}`}>
                 {link.label}
               </span>
             </Link>

@@ -1,207 +1,173 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { MenuItem, FoodCategory } from '@/lib/types';
 import { INITIAL_MENU_ITEMS } from '@/lib/sampleData';
-import { db, isFirebaseConfigured } from '@/lib/firebase';
-import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 interface MenuContextType {
   items: MenuItem[];
-  categories: FoodCategory[];
+  filteredItems: MenuItem[];
+  selectedCategory: FoodCategory;
+  setSelectedCategory: (category: FoodCategory) => void;
+  selectedRestaurantId: string;
+  setSelectedRestaurantId: (restaurantId: string) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  selectedCategory: FoodCategory;
-  setSelectedCategory: (cat: FoodCategory) => void;
   vegOnly: boolean;
-  setVegOnly: (veg: boolean) => void;
-  filteredItems: MenuItem[];
-  // Admin actions
-  toggleAvailability: (id: string) => Promise<void>;
-  updateItemPrice: (id: string, newPrice: number) => Promise<void>;
-  updateItem: (id: string, updatedFields: Partial<MenuItem>) => Promise<void>;
-  addNewItem: (item: Omit<MenuItem, 'id'>) => Promise<void>;
-  deleteItem: (id: string) => Promise<void>;
+  setVegOnly: (vegOnly: boolean) => void;
+  toggleAvailability: (itemId: string) => Promise<void>;
+  updatePrice: (itemId: string, newPrice: number) => Promise<void>;
+  updateItem: (itemId: string, updates: Partial<MenuItem>) => Promise<void>;
+  addNewItem: (itemData: Omit<MenuItem, 'id'>) => Promise<MenuItem>;
+  deleteItem: (itemId: string) => Promise<void>;
   resetToSampleData: () => void;
+  refreshMenu: () => Promise<void>;
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
 
 export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<MenuItem[]>(INITIAL_MENU_ITEMS);
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<FoodCategory>('all');
-  const [vegOnly, setVegOnly] = useState(false);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [vegOnly, setVegOnly] = useState<boolean>(false);
 
-  // Load from local storage or Firestore
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (isFirebaseConfigured) {
-      const fetchFirestoreMenu = async () => {
-        try {
-          const snapshot = await getDocs(collection(db, 'menuItems'));
-          if (!snapshot.empty) {
-            const list: MenuItem[] = [];
-            snapshot.forEach((doc) => list.push({ id: doc.id, ...doc.data() } as MenuItem));
-            setItems(list);
-            return;
+  const fetchMenuFromServer = useCallback(async () => {
+    try {
+      const res = await fetch('/api/menu');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.items) && data.items.length > 0) {
+          setItems(data.items);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('queueless_cu_menu', JSON.stringify(data.items));
           }
-        } catch (err) {
-          console.warn('Could not read from Firestore, falling back to local data', err);
         }
-      };
-      fetchFirestoreMenu();
-    } else {
-      const saved = localStorage.getItem('queueless_cu_menu');
-      if (saved) {
-        try {
-          setItems(JSON.parse(saved));
-        } catch {
-          setItems(INITIAL_MENU_ITEMS);
+      }
+    } catch {
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('queueless_cu_menu');
+        if (saved) {
+          try { setItems(JSON.parse(saved)); } catch {}
         }
       }
     }
-
-    const handleCustomUpdate = (e: Event) => {
-      const customEv = e as CustomEvent<MenuItem[]>;
-      if (customEv.detail) {
-        setItems(customEv.detail);
-      }
-    };
-
-    const handleStorageUpdate = (e: StorageEvent) => {
-      if (e.key === 'queueless_cu_menu' && e.newValue) {
-        try {
-          setItems(JSON.parse(e.newValue));
-        } catch {}
-      }
-    };
-
-    window.addEventListener('queueless_menu_updated', handleCustomUpdate);
-    window.addEventListener('storage', handleStorageUpdate);
-
-    return () => {
-      window.removeEventListener('queueless_menu_updated', handleCustomUpdate);
-      window.removeEventListener('storage', handleStorageUpdate);
-    };
   }, []);
 
-  const saveItems = (updated: MenuItem[]) => {
-    setItems(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('queueless_cu_menu', JSON.stringify(updated));
-      window.dispatchEvent(new CustomEvent('queueless_menu_updated', { detail: updated }));
-    }
+  useEffect(() => {
+    fetchMenuFromServer();
+  }, [fetchMenuFromServer]);
+
+  const toggleAvailability = async (itemId: string) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    const newStatus = !item.isAvailable;
+    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, isAvailable: newStatus } : i)));
+
+    try {
+      await fetch('/api/menu', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: itemId, updates: { isAvailable: newStatus } }),
+      });
+    } catch {}
   };
 
-  const toggleAvailability = async (id: string) => {
-    const updated = items.map((item) => 
-      item.id === id ? { ...item, isAvailable: !item.isAvailable } : item
-    );
-    saveItems(updated);
+  const updatePrice = async (itemId: string, newPrice: number) => {
+    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, price: newPrice } : i)));
+    try {
+      await fetch('/api/menu', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: itemId, updates: { price: newPrice } }),
+      });
+    } catch {}
+  };
 
-    if (isFirebaseConfigured) {
-      try {
-        const item = items.find((i) => i.id === id);
-        if (item) {
-          await updateDoc(doc(db, 'menuItems', id), { isAvailable: !item.isAvailable });
+  const updateItem = async (itemId: string, updates: Partial<MenuItem>) => {
+    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...updates } : i)));
+    try {
+      await fetch('/api/menu', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: itemId, updates }),
+      });
+    } catch {}
+  };
+
+  const addNewItem = async (itemData: Omit<MenuItem, 'id'>): Promise<MenuItem> => {
+    try {
+      const res = await fetch('/api/menu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.item) {
+          setItems((prev) => [data.item, ...prev]);
+          return data.item;
         }
-      } catch (err) {
-        console.error('Firestore update error:', err);
       }
-    }
+    } catch {}
+
+    const newItem: MenuItem = {
+      ...itemData,
+      id: 'item-' + Date.now(),
+    };
+    setItems((prev) => [newItem, ...prev]);
+    return newItem;
   };
 
-  const updateItemPrice = async (id: string, newPrice: number) => {
-    if (newPrice <= 0) return;
-    const updated = items.map((item) => 
-      item.id === id ? { ...item, price: newPrice } : item
-    );
-    saveItems(updated);
-
-    if (isFirebaseConfigured) {
-      try {
-        await updateDoc(doc(db, 'menuItems', id), { price: newPrice });
-      } catch (err) {
-        console.error('Firestore price update error:', err);
-      }
-    }
-  };
-
-  const updateItem = async (id: string, updatedFields: Partial<MenuItem>) => {
-    const updated = items.map((item) => 
-      item.id === id ? { ...item, ...updatedFields } : item
-    );
-    saveItems(updated);
-
-    if (isFirebaseConfigured) {
-      try {
-        await updateDoc(doc(db, 'menuItems', id), updatedFields);
-      } catch (err) {
-        console.error('Firestore update error:', err);
-      }
-    }
-  };
-
-  const addNewItem = async (newItemData: Omit<MenuItem, 'id'>) => {
-    const newId = 'm_' + Date.now();
-    const itemWithId: MenuItem = { ...newItemData, id: newId };
-    const updated = [itemWithId, ...items];
-    saveItems(updated);
-
-    if (isFirebaseConfigured) {
-      try {
-        await setDoc(doc(db, 'menuItems', newId), itemWithId);
-      } catch (err) {
-        console.error('Firestore add item error:', err);
-      }
-    }
-  };
-
-  const deleteItem = async (id: string) => {
-    const updated = items.filter((item) => item.id !== id);
-    saveItems(updated);
-
-    if (isFirebaseConfigured) {
-      try {
-        await deleteDoc(doc(db, 'menuItems', id));
-      } catch (err) {
-        console.error('Firestore delete error:', err);
-      }
-    }
+  const deleteItem = async (itemId: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== itemId));
+    try {
+      await fetch(`/api/menu?id=${itemId}`, { method: 'DELETE' });
+    } catch {}
   };
 
   const resetToSampleData = () => {
-    saveItems(INITIAL_MENU_ITEMS);
+    setItems(INITIAL_MENU_ITEMS);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('queueless_cu_menu', JSON.stringify(INITIAL_MENU_ITEMS));
+    }
   };
 
+  // Filtered Items Computation
   const filteredItems = items.filter((item) => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRestaurant = selectedRestaurantId === 'all' || item.restaurantId === selectedRestaurantId;
     const matchesVeg = !vegOnly || item.isVeg;
-    return matchesCategory && matchesSearch && matchesVeg;
+    const matchesSearch =
+      !searchQuery.trim() ||
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesCategory && matchesRestaurant && matchesVeg && matchesSearch;
   });
 
   return (
     <MenuContext.Provider
       value={{
         items,
-        categories: ['all', 'meals', 'combos', 'snacks', 'south-indian', 'chinese', 'beverages', 'bakery'],
-        searchQuery,
-        setSearchQuery,
+        filteredItems,
         selectedCategory,
         setSelectedCategory,
+        selectedRestaurantId,
+        setSelectedRestaurantId,
+        searchQuery,
+        setSearchQuery,
         vegOnly,
         setVegOnly,
-        filteredItems,
         toggleAvailability,
-        updateItemPrice,
+        updatePrice,
         updateItem,
         addNewItem,
         deleteItem,
         resetToSampleData,
+        refreshMenu: fetchMenuFromServer,
       }}
     >
       {children}
@@ -211,6 +177,8 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useMenu = () => {
   const context = useContext(MenuContext);
-  if (!context) throw new Error('useMenu must be used within a MenuProvider');
+  if (!context) {
+    throw new Error('useMenu must be used within a MenuProvider');
+  }
   return context;
 };

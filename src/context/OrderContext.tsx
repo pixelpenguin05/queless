@@ -1,27 +1,29 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Order, OrderStatus } from '@/lib/types';
-import { db, isFirebaseConfigured } from '@/lib/firebase';
-import { collection, onSnapshot, doc, updateDoc, setDoc, query, orderBy } from 'firebase/firestore';
 
 interface OrderContextType {
   orders: Order[];
   activeOrders: Order[];
   pastOrders: Order[];
-  placeOrder: (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'status'>) => Promise<Order>;
+  placeOrder: (orderData: Omit<Order, 'id' | 'orderNumber' | 'pickupCode' | 'createdAt' | 'status'>) => Promise<Order>;
   updateOrderStatus: (orderId: string, newStatus: OrderStatus) => Promise<void>;
   getOrderById: (orderId: string) => Order | undefined;
+  refreshOrders: () => Promise<void>;
 }
 
 const INITIAL_SAMPLE_ORDERS: Order[] = [
   {
     id: 'ord-101',
     orderNumber: 'QL-4821',
-    studentId: 'student-cu-101',
+    pickupCode: '4821',
+    studentId: 'student-demo-1',
     studentName: 'Aman Sharma',
-    studentPhone: '+91 98765 43210',
+    studentPhone: '9876543210',
     studentRollNo: '21BCS4821',
+    restaurantId: 'rest-c1',
+    restaurantName: 'Food Republic C1',
     items: [
       { id: 'm1', name: 'Special Paneer Butter Masala Thali', price: 130, quantity: 1, isVeg: true },
       { id: 'm5', name: 'Cold Coffee with Choco Fudge', price: 55, quantity: 1, isVeg: true }
@@ -32,57 +34,13 @@ const INITIAL_SAMPLE_ORDERS: Order[] = [
     total: 196,
     status: 'preparing',
     pickupSlot: 'Immediate (15-20 min)',
-    paymentMethod: 'UPI at Pickup',
+    paymentMethod: 'Cash on Delivery',
     paymentStatus: 'Pending',
     createdAt: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
     estimatedReadyTime: '15 mins',
-    canteenCounter: 'Counter 1 (Main Kitchen)',
+    canteenCounter: 'Food Republic C1 • Counter 2',
+    readyNotificationSent: false,
   },
-  {
-    id: 'ord-102',
-    orderNumber: 'QL-4819',
-    studentId: 'student-cu-102',
-    studentName: 'Simran Kaur',
-    studentPhone: '+91 98888 77766',
-    studentRollNo: '21BCS3044',
-    items: [
-      { id: 'm2', name: 'Crispy Veg Masala Dosa', price: 75, quantity: 2, isVeg: true },
-      { id: 'm11', name: 'Fresh Mint Mojito Cooler', price: 50, quantity: 1, isVeg: true }
-    ],
-    subtotal: 200,
-    platformFee: 2,
-    tax: 10,
-    total: 212,
-    status: 'ready',
-    pickupSlot: 'Break Time (1:15 PM)',
-    paymentMethod: 'Pay at Counter',
-    paymentStatus: 'Pending',
-    createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-    estimatedReadyTime: 'Ready Now',
-    canteenCounter: 'Counter 2 (South Indian & Juices)',
-  },
-  {
-    id: 'ord-103',
-    orderNumber: 'QL-4805',
-    studentId: 'student-cu-101',
-    studentName: 'Aman Sharma',
-    studentPhone: '+91 98765 43210',
-    studentRollNo: '21BCS4821',
-    items: [
-      { id: 'm9', name: 'Masala Chai & Samosa Combo', price: 40, quantity: 2, isVeg: true }
-    ],
-    subtotal: 80,
-    platformFee: 2,
-    tax: 4,
-    total: 86,
-    status: 'completed',
-    pickupSlot: 'Morning Break',
-    paymentMethod: 'UPI at Pickup',
-    paymentStatus: 'Paid',
-    createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-    estimatedReadyTime: 'Completed',
-    canteenCounter: 'Counter 3 (Snacks & Tea)',
-  }
 ];
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -90,105 +48,107 @@ const OrderContext = createContext<OrderContextType | undefined>(undefined);
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>(INITIAL_SAMPLE_ORDERS);
 
-  // Firestore live subscription or LocalStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (isFirebaseConfigured) {
-      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        if (!snapshot.empty) {
-          const liveOrders: Order[] = [];
-          snapshot.forEach((doc) => liveOrders.push({ id: doc.id, ...doc.data() } as Order));
-          setOrders(liveOrders);
+  const fetchOrdersFromServer = useCallback(async () => {
+    try {
+      const res = await fetch('/api/orders');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.orders)) {
+          setOrders(data.orders);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('queueless_cu_orders', JSON.stringify(data.orders));
+          }
         }
-      }, (err) => {
-        console.warn('Firestore live order subscription error:', err);
-      });
-      return () => unsubscribe();
-    } else {
-      const saved = localStorage.getItem('queueless_cu_orders');
-      if (saved) {
-        try {
-          setOrders(JSON.parse(saved));
-        } catch {
-          setOrders(INITIAL_SAMPLE_ORDERS);
+      }
+    } catch {
+      // Fallback to localStorage if network/offline
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('queueless_cu_orders');
+        if (saved) {
+          try { setOrders(JSON.parse(saved)); } catch {}
         }
       }
     }
-
-    const handleCustomOrderUpdate = (e: Event) => {
-      const customEv = e as CustomEvent<Order[]>;
-      if (customEv.detail) {
-        setOrders(customEv.detail);
-      }
-    };
-
-    const handleStorageOrderUpdate = (e: StorageEvent) => {
-      if (e.key === 'queueless_cu_orders' && e.newValue) {
-        try {
-          setOrders(JSON.parse(e.newValue));
-        } catch {}
-      }
-    };
-
-    window.addEventListener('queueless_orders_updated', handleCustomOrderUpdate);
-    window.addEventListener('storage', handleStorageOrderUpdate);
-
-    return () => {
-      window.removeEventListener('queueless_orders_updated', handleCustomOrderUpdate);
-      window.removeEventListener('storage', handleStorageOrderUpdate);
-    };
   }, []);
 
-  const saveOrders = (updated: Order[]) => {
-    setOrders(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('queueless_cu_orders', JSON.stringify(updated));
-      window.dispatchEvent(new CustomEvent('queueless_orders_updated', { detail: updated }));
-    }
-  };
+  useEffect(() => {
+    fetchOrdersFromServer();
 
-  const placeOrder = async (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'status'>): Promise<Order> => {
+    // Poll every 3 seconds so that ordering on Phone 1 updates Phone 2 in real time
+    const interval = setInterval(fetchOrdersFromServer, 3000);
+    return () => clearInterval(interval);
+  }, [fetchOrdersFromServer]);
+
+  const placeOrder = async (orderData: Omit<Order, 'id' | 'orderNumber' | 'pickupCode' | 'createdAt' | 'status'>): Promise<Order> => {
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.order) {
+          setOrders((prev) => [data.order, ...prev]);
+          return data.order;
+        }
+      }
+    } catch (e) {
+      console.warn('API placeOrder error, falling back locally:', e);
+    }
+
+    // Local fallback
     const id = 'ord-' + Date.now();
     const orderNumber = 'QL-' + Math.floor(1000 + Math.random() * 9000);
     const newOrder: Order = {
       ...orderData,
       id,
       orderNumber,
+      pickupCode: orderNumber.replace('QL-', ''),
       createdAt: new Date().toISOString(),
       status: 'pending',
+      paymentMethod: orderData.paymentMethod || 'Cash on Delivery',
+      paymentStatus: 'Pending',
+      canteenCounter: orderData.canteenCounter || 'Food Republic C1 • Counter 2',
+      restaurantName: orderData.restaurantName || 'Food Republic C1',
     };
 
     const updated = [newOrder, ...orders];
-    saveOrders(updated);
-
-    if (isFirebaseConfigured) {
-      try {
-        await setDoc(doc(db, 'orders', id), newOrder);
-      } catch (err) {
-        console.error('Firestore order creation error:', err);
-      }
+    setOrders(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('queueless_cu_orders', JSON.stringify(updated));
     }
-
     return newOrder;
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
-    const updated = orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o));
-    saveOrders(updated);
-
-    if (isFirebaseConfigured) {
-      try {
-        await updateDoc(doc(db, 'orders', orderId), { status: newStatus });
-      } catch (err) {
-        console.error('Firestore order update error:', err);
-      }
+    try {
+      await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status: newStatus }),
+      });
+    } catch (e) {
+      console.warn('API updateOrderStatus error:', e);
     }
+
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              status: newStatus,
+              paymentStatus: newStatus === 'completed' && o.paymentMethod === 'Cash on Delivery' ? 'Paid' : o.paymentStatus,
+              completedAt: newStatus === 'completed' ? new Date().toISOString() : o.completedAt,
+            }
+          : o
+      )
+    );
   };
 
   const getOrderById = (orderId: string) => {
-    return orders.find((o) => o.id === orderId || o.orderNumber === orderId);
+    return orders.find((o) => o.id === orderId);
   };
 
   const activeOrders = orders.filter((o) => ['pending', 'accepted', 'preparing', 'ready'].includes(o.status));
@@ -203,6 +163,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         placeOrder,
         updateOrderStatus,
         getOrderById,
+        refreshOrders: fetchOrdersFromServer,
       }}
     >
       {children}
@@ -212,6 +173,8 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 export const useOrders = () => {
   const context = useContext(OrderContext);
-  if (!context) throw new Error('useOrders must be used within an OrderProvider');
+  if (!context) {
+    throw new Error('useOrders must be used within an OrderProvider');
+  }
   return context;
 };

@@ -2,28 +2,16 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '@/lib/types';
-import { auth, db, isFirebaseConfigured } from '@/lib/firebase';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut as firebaseSignOut,
-  onAuthStateChanged 
-} from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (
-    name: string,
-    email: string,
-    password: string,
-    rollNumber?: string,
-    phone?: string,
-    role?: UserRole,
-    restaurantName?: string
-  ) => Promise<{ success: boolean; error?: string }>;
+  isAuthModalOpen: boolean;
+  openAuthModal: () => void;
+  closeAuthModal: () => void;
+  loginAsStudent: (name: string, phone: string) => Promise<{ success: boolean; error?: string }>;
+  loginAsOwner: (ownerName: string, phone: string, restaurantName?: string) => Promise<{ success: boolean; error?: string }>;
+  loginAsAdmin: () => void;
   updateUserName: (newName: string) => Promise<void>;
   logout: () => Promise<void>;
   quickLoginAsStudent: () => void;
@@ -32,23 +20,30 @@ interface AuthContextType {
 }
 
 const DEMO_STUDENT: UserProfile = {
-  id: 'student-cu-101',
+  id: 'student-demo-1',
   name: 'Aman Sharma',
-  email: 'aman.cu@gmail.com',
+  phone: '9876543210',
   role: 'student',
   rollNumber: '21BCS4821',
-  phone: '+91 98765 43210',
   campusBlock: 'Academic Block B-3',
 };
 
+const DEMO_OWNER: UserProfile = {
+  id: 'owner-demo-1',
+  name: 'Chef Vikram',
+  phone: '9811122334',
+  role: 'restaurant_owner',
+  restaurantId: 'rest-c1',
+  restaurantName: 'Food Republic C1',
+  campusBlock: 'Food Republic C1 Counter 2',
+};
+
 const DEMO_ADMIN: UserProfile = {
-  id: 'admin-canteen-01',
-  name: 'Chef Vikram (Canteen Lead)',
-  email: 'admin.canteen@cumail.in',
+  id: 'admin-super-1',
+  name: 'CU Campus Director (Admin)',
+  phone: '9900011223',
   role: 'admin',
-  rollNumber: 'STAFF-902',
-  phone: '+91 98111 22334',
-  campusBlock: 'Food Republic C1',
+  campusBlock: 'Admin Block 1',
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,193 +51,120 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
-  // Restore user from localStorage or Firebase
+  // Restore user from localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    if (isFirebaseConfigured) {
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-          try {
-            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-            if (userDoc.exists()) {
-              setUser(userDoc.data() as UserProfile);
-            } else {
-              // Fallback user profile
-              const defaultProfile: UserProfile = {
-                id: firebaseUser.uid,
-                name: firebaseUser.displayName || 'Campus Student',
-                email: firebaseUser.email || '',
-                role: firebaseUser.email?.includes('admin') ? 'admin' : 'student',
-                rollNumber: 'CU-2024',
-                phone: '+91 98000 00000',
-              };
-              setUser(defaultProfile);
-            }
-          } catch (e) {
-            console.error('Error fetching Firestore user:', e);
-          }
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
-      });
-      return () => unsubscribe();
-    } else {
-      // Local persistent storage
-      const savedUser = localStorage.getItem('queueless_cu_user');
-      if (savedUser) {
-        try {
-          setUser(JSON.parse(savedUser));
-        } catch {
-          localStorage.removeItem('queueless_cu_user');
-        }
+    const savedUser = localStorage.getItem('queueless_cu_user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem('queueless_cu_user');
       }
-      setLoading(false);
     }
+    setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    setLoading(true);
-    try {
-      if (isFirebaseConfigured) {
-        const userCred = await signInWithEmailAndPassword(auth, email, password);
-        const userDoc = await getDoc(doc(db, 'users', userCred.user.uid));
-        if (userDoc.exists()) {
-          const profile = userDoc.data() as UserProfile;
-          setUser(profile);
-          localStorage.setItem('queueless_cu_user', JSON.stringify(profile));
-          return { success: true };
-        }
-      }
+  const openAuthModal = () => setIsAuthModalOpen(true);
+  const closeAuthModal = () => setIsAuthModalOpen(false);
 
-      // Local mock login validation
-      if (!email.includes('@')) {
-        setLoading(false);
-        return { success: false, error: 'Please enter a valid campus email address.' };
-      }
-      if (password.length < 6) {
-        setLoading(false);
-        return { success: false, error: 'Password must be at least 6 characters long.' };
-      }
+  // Simple student login/signup by Name + Phone
+  const loginAsStudent = async (name: string, phone: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanName = name.trim();
+    const cleanPhone = phone.trim().replace(/\s+/g, '');
 
-      const isAdmin = email.toLowerCase().includes('admin') || email.toLowerCase().includes('canteen') || email.toLowerCase().includes('owner');
-      const profile: UserProfile = isAdmin 
-        ? { ...DEMO_ADMIN, email } 
-        : {
-            id: 'user-' + Date.now(),
-            name: email.split('@')[0].toUpperCase(),
-            email,
-            role: 'student',
-            rollNumber: '21BCS' + Math.floor(1000 + Math.random() * 9000),
-            phone: '+91 98765 00000',
-            campusBlock: 'Block B-3',
-          };
-
-      setUser(profile);
-      localStorage.setItem('queueless_cu_user', JSON.stringify(profile));
-      setLoading(false);
-      return { success: true };
-    } catch (err: any) {
-      setLoading(false);
-      return { success: false, error: err.message || 'Login failed. Please check credentials.' };
+    if (!cleanName || cleanName.length < 2) {
+      return { success: false, error: 'Please enter your name (at least 2 letters).' };
     }
+    if (!cleanPhone || cleanPhone.length < 10) {
+      return { success: false, error: 'Please enter a valid 10-digit mobile number.' };
+    }
+
+    const studentProfile: UserProfile = {
+      id: 'student-' + cleanPhone.slice(-6),
+      name: cleanName,
+      phone: cleanPhone,
+      role: 'student',
+      rollNumber: '21BCS' + cleanPhone.slice(-4),
+      campusBlock: 'Food Republic C1',
+    };
+
+    setUser(studentProfile);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('queueless_cu_user', JSON.stringify(studentProfile));
+    }
+    setIsAuthModalOpen(false);
+    return { success: true };
   };
 
-  const register = async (
-    name: string,
-    email: string,
-    password: string,
-    rollNumber?: string,
-    phone?: string,
-    selectedRole?: UserRole,
-    restaurantName?: string
-  ): Promise<{ success: boolean; error?: string }> => {
-    setLoading(true);
-    try {
-      if (!name.trim()) return { success: false, error: 'Name is required' };
-      if (!email.includes('@')) return { success: false, error: 'Valid email is required' };
-      if (password.length < 6) return { success: false, error: 'Password must be at least 6 characters' };
+  // Canteen Owner Login / Registration
+  const loginAsOwner = async (ownerName: string, phone: string, restaurantName: string = 'Food Republic C1'): Promise<{ success: boolean; error?: string }> => {
+    const cleanName = ownerName.trim();
+    const cleanPhone = phone.trim().replace(/\s+/g, '');
 
-      const role: UserRole = selectedRole || (email.toLowerCase().includes('admin') || email.toLowerCase().includes('owner') ? 'admin' : 'student');
-      const finalRoll = rollNumber?.trim() || (role === 'admin' ? 'OWNER-' + Math.floor(100 + Math.random() * 900) : '21BCS' + Math.floor(1000 + Math.random() * 9000));
-      const finalBlock = role === 'admin' ? (restaurantName?.trim() || 'Food Republic C1') : 'Academic Block B-3';
+    if (!cleanName) {
+      return { success: false, error: 'Please enter your name.' };
+    }
+    if (!cleanPhone) {
+      return { success: false, error: 'Please enter your phone number.' };
+    }
 
-      if (isFirebaseConfigured) {
-        const userCred = await createUserWithEmailAndPassword(auth, email, password);
-        const profile: UserProfile = {
-          id: userCred.user.uid,
-          name: name.trim(),
-          email: email.trim(),
-          role,
-          rollNumber: finalRoll,
-          phone: phone?.trim() || '+91 98111 22334',
-          campusBlock: finalBlock,
-        };
-        await setDoc(doc(db, 'users', userCred.user.uid), profile);
-        setUser(profile);
-        localStorage.setItem('queueless_cu_user', JSON.stringify(profile));
-        return { success: true };
-      }
+    const ownerProfile: UserProfile = {
+      id: 'owner-' + cleanPhone.slice(-6),
+      name: cleanName,
+      phone: cleanPhone,
+      role: 'restaurant_owner',
+      restaurantId: 'rest-c1',
+      restaurantName: restaurantName.trim() || 'Food Republic C1',
+      campusBlock: restaurantName.trim(),
+    };
 
-      // Local persistent registration
-      const newProfile: UserProfile = {
-        id: (role === 'admin' ? 'owner-' : 'user-') + Date.now(),
-        name: name.trim(),
-        email: email.trim(),
-        role,
-        rollNumber: finalRoll,
-        phone: phone?.trim() || '+91 98111 22334',
-        campusBlock: finalBlock,
-      };
+    setUser(ownerProfile);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('queueless_cu_user', JSON.stringify(ownerProfile));
+    }
+    return { success: true };
+  };
 
-      setUser(newProfile);
-      localStorage.setItem('queueless_cu_user', JSON.stringify(newProfile));
-      setLoading(false);
-      return { success: true };
-    } catch (err: any) {
-      setLoading(false);
-      return { success: false, error: err.message || 'Registration failed.' };
+  const loginAsAdmin = () => {
+    setUser(DEMO_ADMIN);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('queueless_cu_user', JSON.stringify(DEMO_ADMIN));
     }
   };
 
   const updateUserName = async (newName: string) => {
-    if (!user || !newName.trim()) return;
-    const updated: UserProfile = { ...user, name: newName.trim() };
+    if (!user) return;
+    const updated = { ...user, name: newName };
     setUser(updated);
     if (typeof window !== 'undefined') {
       localStorage.setItem('queueless_cu_user', JSON.stringify(updated));
     }
-    if (isFirebaseConfigured && auth.currentUser) {
-      try {
-        await setDoc(doc(db, 'users', auth.currentUser.uid), updated, { merge: true });
-      } catch (e) {
-        console.error('Error updating user in Firestore:', e);
-      }
-    }
   };
 
   const logout = async () => {
-    if (isFirebaseConfigured) {
-      try {
-        await firebaseSignOut(auth);
-      } catch (e) {
-        console.error('Firebase signout error:', e);
-      }
-    }
     setUser(null);
-    localStorage.removeItem('queueless_cu_user');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('queueless_cu_user');
+    }
   };
 
   const quickLoginAsStudent = () => {
     setUser(DEMO_STUDENT);
-    localStorage.setItem('queueless_cu_user', JSON.stringify(DEMO_STUDENT));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('queueless_cu_user', JSON.stringify(DEMO_STUDENT));
+    }
+    setIsAuthModalOpen(false);
   };
 
   const quickLoginAsAdmin = () => {
-    setUser(DEMO_ADMIN);
-    localStorage.setItem('queueless_cu_user', JSON.stringify(DEMO_ADMIN));
+    setUser(DEMO_OWNER);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('queueless_cu_user', JSON.stringify(DEMO_OWNER));
+    }
   };
 
   return (
@@ -250,13 +172,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         loading,
-        login,
-        register,
+        isAuthModalOpen,
+        openAuthModal,
+        closeAuthModal,
+        loginAsStudent,
+        loginAsOwner,
+        loginAsAdmin,
         updateUserName,
         logout,
         quickLoginAsStudent,
         quickLoginAsAdmin,
-        isFirebaseActive: isFirebaseConfigured,
+        isFirebaseActive: false,
       }}
     >
       {children}
@@ -266,6 +192,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
 };

@@ -13,8 +13,13 @@ import {
   Sparkles,
   Smartphone,
   Flame,
-  ChefHat
+  ChefHat,
+  MapPin,
+  Star,
+  CheckCircle2,
+  TrendingUp
 } from 'lucide-react';
+import Image from 'next/image';
 
 export default function WelcomePage() {
   const { user, loading, quickLoginAsStudent, quickLoginAsAdmin } = useAuth();
@@ -33,163 +38,232 @@ export default function WelcomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white">
-        <div className="w-16 h-16 rounded-3xl bg-brand-500/20 border border-brand-500/40 flex items-center justify-center animate-bounce">
-          <UtensilsCrossed className="w-8 h-8 text-brand-500" />
+      <div className="min-h-screen bg-[#FAF7F2] flex flex-col items-center justify-center p-6 text-[#1A3D4F]">
+        <div className="w-16 h-16 rounded-3xl bg-[#FFE4E6] border border-[#E23744]/30 flex items-center justify-center animate-bounce shadow-md">
+          <UtensilsCrossed className="w-8 h-8 text-[#E23744]" />
         </div>
-        <p className="mt-4 text-sm font-semibold text-slate-300">Loading QueueLess CU...</p>
+        <p className="mt-4 font-heading font-bold text-lg text-[#1A3D4F]">Loading QueueLess CU...</p>
+        <p className="text-xs font-sans text-[#8A7F70] mt-1">Connecting to Chandigarh University Canteen</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-brand-950 text-white flex flex-col justify-between p-6 relative overflow-hidden">
-      {/* Decorative Glow Elements */}
-      <div className="absolute -top-24 -right-24 w-72 h-72 bg-brand-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 -left-28 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-[#FAF7F2] text-[#1A3D4F] flex flex-col justify-between relative overflow-hidden">
+      
+      {/* Background Subtle Cream Circles */}
+      <div className="absolute -top-32 -right-32 w-96 h-96 bg-[#FBF1D4]/50 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 -left-32 w-80 h-80 bg-[#FFE4E6]/40 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Brand Header */}
-      <div className="pt-4 z-10 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-500 to-amber-500 flex items-center justify-center shadow-lg shadow-brand-500/30">
-            <UtensilsCrossed className="w-6 h-6 text-white stroke-[2.5]" />
-          </div>
-          <div>
-            <h1 className="font-black text-xl tracking-tight leading-none">
-              QueueLess <span className="text-brand-400">CU</span>
-            </h1>
-            <p className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 mt-0.5">
-              Chandigarh University Canteen
-            </p>
-          </div>
-        </div>
+      {/* Main Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 w-full flex-1 flex flex-col justify-center">
+        
+        {/* Hero Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          
+          {/* Left Column: Brand, Headline, Value Prop & CTAs */}
+          <div className="lg:col-span-7 space-y-6 text-left">
+            
+            {/* Campus Pill */}
+            <div className="inline-flex items-center gap-2 bg-[#E7F5EE] border border-[#0F5B4C]/20 px-3.5 py-1.5 rounded-full text-xs font-sans font-bold text-[#0F5B4C] shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <span>Chandigarh University • Food Republic C1 Live</span>
+            </div>
 
-        <span className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          Food Republic C1 Live
-        </span>
-      </div>
-
-      {/* Hero Content & Food Art Card */}
-      <div className="my-auto py-6 z-10">
-        {/* Visual Illustration Badge */}
-        <div className="relative mx-auto w-full max-w-xs aspect-square rounded-3xl p-1 bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-md shadow-2xl mb-8 flex flex-col justify-between overflow-hidden">
-          <div 
-            className="absolute inset-0 bg-cover bg-center opacity-75 transition hover:scale-105 duration-700"
-            style={{
-              backgroundImage: `url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80')`
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-
-          {/* Floating Pill Highlights */}
-          <div className="relative z-10 p-3 flex justify-between">
-            <span className="bg-slate-900/85 backdrop-blur-md border border-white/10 text-white text-[11px] font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-lg">
-              <Flame className="w-3.5 h-3.5 text-brand-400 fill-brand-400" /> Hot & Fresh
-            </span>
-            <span className="bg-brand-500 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg">
-              ₹0 Wait Time
-            </span>
-          </div>
-
-          <div className="relative z-10 p-4">
-            <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl p-3 border border-white/10 shadow-xl">
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 mb-1">
-                <Zap className="w-4 h-4 fill-emerald-400" />
-                <span>Instant Campus Break Pickup</span>
-              </div>
-              <p className="text-xs text-slate-300">
-                Order during class. Walk into Canteen. Pick up hot food directly from Counter 2.
+            {/* Main Editorial Heading */}
+            <div className="space-y-3">
+              <h1 className="font-heading font-extrabold text-4xl sm:text-5xl lg:text-6xl text-[#1A3D4F] tracking-tight leading-[1.15]">
+                Skip the Queue. <br />
+                <span className="text-[#E23744] italic font-serif">
+                  Savor Every Break.
+                </span>
+              </h1>
+              
+              <p className="font-sans text-[#5F6B6F] text-base sm:text-lg max-w-xl leading-relaxed pt-1">
+                Order your favourite canteen meals right from class. Walk in during lunch break, show your token at <strong>Counter 2</strong>, and pick up fresh hot food instantly.
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Headlines */}
-        <div className="text-center">
-          <div className="inline-flex items-center gap-1.5 bg-brand-500/20 border border-brand-500/30 text-brand-300 text-xs font-bold px-3 py-1 rounded-full mb-3">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Campus Food Ordering Reimagined</span>
+            {/* Action Buttons */}
+            <div className="pt-2 flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-lg">
+              <Link
+                href="/home"
+                className="bg-[#E23744] hover:bg-[#CB202D] active:scale-98 text-white font-sans font-extrabold py-4 px-7 rounded-2xl shadow-elevated flex items-center justify-center gap-3 text-base transition-all group"
+              >
+                <UtensilsCrossed className="w-5 h-5 stroke-[2.5]" />
+                <span>Enter Canteen & Order Food</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+
+              <Link
+                href="/register"
+                className="bg-white hover:bg-[#F5EFE6] text-[#1A3D4F] border border-[#EAE5DC] font-sans font-bold py-4 px-6 rounded-2xl shadow-soft flex items-center justify-center gap-2.5 text-sm transition-all"
+              >
+                <ChefHat className="w-4 h-4 text-[#E23744]" />
+                <span>Restaurant Owner Portal</span>
+              </Link>
+            </div>
+
+            {/* Quick Demo Access Bar */}
+            <div className="pt-4 border-t border-[#EAE5DC] max-w-lg">
+              <div className="flex items-center gap-1.5 text-xs font-sans font-bold text-[#8A7F70] mb-2.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#DBA81F]" />
+                <span>One-Click Evaluator Demo (No login credentials needed):</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    quickLoginAsStudent();
+                    router.push('/home');
+                  }}
+                  className="bg-white hover:bg-[#FFE4E6]/50 border border-[#EAE5DC] hover:border-[#E23744]/40 p-3 rounded-2xl text-left transition shadow-xs group"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🎓</span>
+                    <div>
+                      <div className="text-xs font-bold font-sans text-[#1A3D4F] group-hover:text-[#E23744]">
+                        Student View
+                      </div>
+                      <div className="text-[10px] font-sans text-[#8A7F70]">
+                        Aman Sharma (21BCS4821)
+                      </div>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    quickLoginAsAdmin();
+                    router.push('/admin');
+                  }}
+                  className="bg-white hover:bg-[#FBF1D4]/60 border border-[#EAE5DC] hover:border-[#DBA81F]/50 p-3 rounded-2xl text-left transition shadow-xs group"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">👨‍🍳</span>
+                    <div>
+                      <div className="text-xs font-bold font-sans text-[#1A3D4F] group-hover:text-[#DBA81F]">
+                        Kitchen & Owner Panel
+                      </div>
+                      <div className="text-[10px] font-sans text-[#8A7F70]">
+                        Food Republic C1 Staff
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
-            Skip the Queue. <br />
-            <span className="bg-gradient-to-r from-brand-400 via-amber-300 to-brand-500 bg-clip-text text-transparent">
-              Enjoy Your Break.
-            </span>
-          </h2>
-          <p className="text-sm text-slate-300 mt-3 max-w-xs mx-auto leading-relaxed">
-            Order your favourite campus meals ahead and spend less time waiting in long lunch crowds.
-          </p>
+
+          {/* Right Column: Hero Visual Card (Food & Live Highlights) */}
+          <div className="lg:col-span-5 relative">
+            <div className="relative mx-auto w-full max-w-md aspect-[4/5] rounded-4xl p-2 bg-gradient-to-b from-white via-white to-[#F5EFE6] border border-[#EAE5DC] shadow-2xl overflow-hidden flex flex-col justify-between">
+              
+              {/* Background Food Photography */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105"
+                style={{
+                  backgroundImage: `url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80')`
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1A3D4F] via-[#1A3D4F]/40 to-transparent" />
+
+              {/* Floating Top Badges */}
+              <div className="relative z-10 p-3 sm:p-4 flex justify-between items-center">
+                <span className="bg-white/95 backdrop-blur-md border border-[#EAE5DC] text-[#1A3D4F] text-xs font-bold font-sans px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-md">
+                  <Flame className="w-4 h-4 text-[#E23744] fill-[#E23744]" />
+                  <span>Fresh Canteen Meals</span>
+                </span>
+                <span className="bg-[#E8B92C] text-[#1A3D4F] text-xs font-black font-sans px-3 py-1.5 rounded-full shadow-md">
+                  ₹0 Pre-order Fee
+                </span>
+              </div>
+
+              {/* Floating Bottom Card: Real-time pickup preview */}
+              <div className="relative z-10 p-4">
+                <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 border border-white/60 shadow-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-[#E7F5EE] text-[#0F5B4C] flex items-center justify-center font-bold text-xs">
+                        <Zap className="w-4 h-4 fill-[#0F5B4C]" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-extrabold text-[#1A3D4F] font-sans">
+                          Counter 2 Express Pickup
+                        </div>
+                        <div className="text-[10px] text-[#5F6B6F]">
+                          Ready in 10-15 minutes
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-xs font-black text-[#E23744] bg-[#FFF5F5] px-2 py-0.5 rounded-lg border border-[#E23744]/20">
+                      TOKEN #QL-4821
+                    </span>
+                  </div>
+                  
+                  <div className="pt-2 border-t border-[#EAE5DC] flex items-center justify-between text-[11px] text-[#5F6B6F]">
+                    <span>Paneer Butter Masala Thali + Butter Naan</span>
+                    <span className="font-bold text-[#1A3D4F]">₹180</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
         </div>
 
         {/* Feature Highlights Grid */}
-        <div className="grid grid-cols-3 gap-2 mt-6 text-center">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5">
-            <Clock className="w-5 h-5 text-amber-400 mx-auto mb-1" />
-            <div className="text-[11px] font-bold text-white">10m Prep</div>
-            <div className="text-[10px] text-slate-400">Pre-ordered</div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-16 text-center">
+          <div className="bg-white border border-[#EAE5DC] rounded-3xl p-5 shadow-soft hover:shadow-elevated transition-all">
+            <div className="w-12 h-12 rounded-2xl bg-[#FBF1D4] text-[#DBA81F] flex items-center justify-center mx-auto mb-3">
+              <Clock className="w-6 h-6 stroke-[2.2]" />
+            </div>
+            <div className="font-heading font-bold text-[#1A3D4F] text-base">10m Express Prep</div>
+            <div className="text-xs font-sans text-[#5F6B6F] mt-1">Pre-ordered during lecture</div>
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5">
-            <Smartphone className="w-5 h-5 text-brand-400 mx-auto mb-1" />
-            <div className="text-[11px] font-bold text-white">Live Tracking</div>
-            <div className="text-[10px] text-slate-400">Real-time status</div>
+
+          <div className="bg-white border border-[#EAE5DC] rounded-3xl p-5 shadow-soft hover:shadow-elevated transition-all">
+            <div className="w-12 h-12 rounded-2xl bg-[#FFE4E6] text-[#E23744] flex items-center justify-center mx-auto mb-3">
+              <Smartphone className="w-6 h-6 stroke-[2.2]" />
+            </div>
+            <div className="font-heading font-bold text-[#1A3D4F] text-base">Live Token Status</div>
+            <div className="text-xs font-sans text-[#5F6B6F] mt-1">Real-time cooking tracker</div>
           </div>
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5">
-            <ShieldCheck className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
-            <div className="text-[11px] font-bold text-white">Pay at Counter</div>
-            <div className="text-[10px] text-slate-400">Cash or UPI</div>
+
+          <div className="bg-white border border-[#EAE5DC] rounded-3xl p-5 shadow-soft hover:shadow-elevated transition-all">
+            <div className="w-12 h-12 rounded-2xl bg-[#E7F5EE] text-[#0F5B4C] flex items-center justify-center mx-auto mb-3">
+              <MapPin className="w-6 h-6 stroke-[2.2]" />
+            </div>
+            <div className="font-heading font-bold text-[#1A3D4F] text-base">Food Republic C1</div>
+            <div className="text-xs font-sans text-[#5F6B6F] mt-1">Ground floor express counter</div>
+          </div>
+
+          <div className="bg-white border border-[#EAE5DC] rounded-3xl p-5 shadow-soft hover:shadow-elevated transition-all">
+            <div className="w-12 h-12 rounded-2xl bg-[#F5EFE6] text-[#2E5A66] flex items-center justify-center mx-auto mb-3">
+              <ShieldCheck className="w-6 h-6 stroke-[2.2]" />
+            </div>
+            <div className="font-heading font-bold text-[#1A3D4F] text-base">Pay at Counter</div>
+            <div className="text-xs font-sans text-[#5F6B6F] mt-1">UPI QR or cash on pickup</div>
           </div>
         </div>
+
       </div>
 
-      {/* Action Buttons */}
-      <div className="space-y-3 z-10 pt-2 pb-4">
-        <Link
-          href="/home"
-          className="w-full bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 active:scale-98 text-white font-extrabold py-3.5 px-6 rounded-2xl shadow-elevated flex items-center justify-center gap-2 text-base transition-all"
-        >
-          <UtensilsCrossed className="w-5 h-5" />
-          <span>Enter Canteen & Order Food</span>
-          <ArrowRight className="w-5 h-5" />
-        </Link>
-
-        <Link
-          href="/register"
-          className="w-full bg-white/10 hover:bg-white/15 active:scale-98 text-white font-bold py-3.5 px-6 rounded-2xl border border-white/15 flex items-center justify-center gap-2 text-sm transition-all"
-        >
-          <ChefHat className="w-4 h-4 text-amber-400" />
-          <span>Restaurant Owner Registration</span>
-        </Link>
-
-        {/* Quick Demo Access Bar */}
-        <div className="pt-2 border-t border-white/10">
-          <p className="text-[11px] text-center text-slate-400 font-medium mb-2">
-            Instant Demo Review (No password needed):
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                quickLoginAsStudent();
-                router.push('/home');
-              }}
-              className="bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/40 text-brand-300 text-xs font-bold py-2 rounded-xl transition"
-            >
-              🎓 Explore Student
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                quickLoginAsAdmin();
-                router.push('/admin');
-              }}
-              className="bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-bold py-2 rounded-xl transition"
-            >
-              👨‍🍳 Explore Kitchen
-            </button>
+      {/* Footer */}
+      <footer className="border-t border-[#EAE5DC] bg-white py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs font-sans text-[#8A7F70] gap-3">
+          <p>© 2026 QueueLess CU • Chandigarh University Campus Food Ordering System</p>
+          <div className="flex items-center gap-4">
+            <Link href="/menu" className="hover:text-[#E23744] transition">Canteen Menu</Link>
+            <Link href="/admin" className="hover:text-[#E23744] transition">Kitchen Admin</Link>
+            <Link href="/login" className="hover:text-[#E23744] transition">Student Sign In</Link>
           </div>
         </div>
-      </div>
+      </footer>
+
     </div>
   );
 }

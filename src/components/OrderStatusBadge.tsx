@@ -10,37 +10,37 @@ interface Props {
 export const OrderStatusBadge: React.FC<Props> = ({ status, size = 'md' }) => {
   const config = {
     pending: {
-      bg: 'bg-amber-50 border-amber-200 text-amber-800',
+      bg: 'bg-[#FBF1D4] border-[#E8B92C] text-[#8A6A0B]',
       icon: Clock,
       label: 'Order Placed',
       pulse: false,
     },
     accepted: {
-      bg: 'bg-blue-50 border-blue-200 text-blue-800',
+      bg: 'bg-[#E7F5EE] border-[#0F5B4C]/30 text-[#0F5B4C]',
       icon: BellRing,
       label: 'Accepted by Kitchen',
       pulse: false,
     },
     preparing: {
-      bg: 'bg-orange-50 border-orange-200 text-orange-800',
+      bg: 'bg-[#FFF5F5] border-[#E23744]/30 text-[#E23744]',
       icon: Flame,
       label: 'Preparing in Kitchen',
       pulse: true,
     },
     ready: {
-      bg: 'bg-emerald-50 border-emerald-300 text-emerald-800 ring-2 ring-emerald-500/20',
+      bg: 'bg-[#E7F5EE] border-[#0F5B4C] text-[#0F5B4C] ring-2 ring-[#0F5B4C]/20',
       icon: CheckCircle2,
       label: 'Ready for Pickup!',
       pulse: true,
     },
     completed: {
-      bg: 'bg-slate-100 border-slate-200 text-slate-700',
+      bg: 'bg-[#F5EFE6] border-[#EAE5DC] text-[#5F6B6F]',
       icon: Check,
       label: 'Picked Up',
       pulse: false,
     },
     cancelled: {
-      bg: 'bg-rose-50 border-rose-200 text-rose-800',
+      bg: 'bg-[#FFF5F5] border-[#CC191D]/30 text-[#CC191D]',
       icon: XCircle,
       label: 'Cancelled',
       pulse: false,
@@ -49,14 +49,14 @@ export const OrderStatusBadge: React.FC<Props> = ({ status, size = 'md' }) => {
 
   const Icon = config.icon;
   const sizeClasses = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-1 text-xs font-medium',
-    lg: 'px-3.5 py-1.5 text-sm font-semibold',
+    sm: 'px-2.5 py-0.5 text-xs',
+    md: 'px-3 py-1 text-xs font-semibold',
+    lg: 'px-4 py-1.5 text-sm font-bold',
   }[size];
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border shadow-sm ${config.bg} ${sizeClasses}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border shadow-xs font-sans ${config.bg} ${sizeClasses}`}
     >
       <Icon className={`w-3.5 h-3.5 ${config.pulse ? 'animate-pulse' : ''}`} />
       <span>{config.label}</span>
